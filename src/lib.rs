@@ -5,5 +5,6 @@ extern crate pest;
 extern crate pest_derive;
 extern crate symbol;
 
+pub mod anf;
 pub mod ast;
 pub mod parser;

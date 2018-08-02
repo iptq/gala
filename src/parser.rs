@@ -1,3 +1,5 @@
+//! Parser, based on Pest
+
 use failure::Error;
 use pest::iterators::Pair;
 use pest::Parser;
@@ -42,7 +44,7 @@ pub fn convert_decl(pair: Pair<Rule>) -> ast::Decl {
     let mut decl = None;
     for p in pair.into_inner() {
         match p.as_rule() {
-            Rule::decl_fn => decl = Some(convert_function(p, true)),
+            Rule::decl_fn => decl = Some(convert_function(p)),
             _ => unreachable!("unexpected {:?}", p),
         }
     }
@@ -52,15 +54,25 @@ pub fn convert_decl(pair: Pair<Rule>) -> ast::Decl {
 pub fn convert_expr(pair: Pair<Rule>) -> ast::Expr {
     let p = pair.into_inner().next().unwrap();
     match p.as_rule() {
-        Rule::anon_fn => ast::Expr::Fn(convert_function(p, false)),
+        Rule::anon_fn => ast::Expr::Fn(convert_function(p)),
         Rule::literal => ast::Expr::Lit(convert_literal(p)),
         _ => unreachable!("unexpected {:?}", p),
     }
 }
 
-pub fn convert_function(pair: Pair<Rule>, named: bool) -> ast::Function {
+pub fn convert_function(pair: Pair<Rule>) -> ast::Function {
+    let mut name = None;
+    let mut expr = None;
+    for p in pair.into_inner() {
+        match p.as_rule() {
+            Rule::ident => name = Some(p.into_span().as_str().to_owned()),
+            Rule::expr => expr = Some(convert_expr(p)),
+            _ => unreachable!("unexpected {:?}", p),
+        }
+    }
     ast::Function {
-        name: Some("shiet".to_owned()),
+        name,
+        body: Box::new(expr.unwrap()),
     }
 }
 

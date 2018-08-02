@@ -1,9 +1,13 @@
-use symbol::Symbol;
+//! Abstract Syntax Tree
 
 #[derive(Clone, Debug)]
 pub enum Decl {
     Fn(Function),
+    Enum(Enum),
 }
+
+#[derive(Clone, Debug)]
+pub enum Enum {}
 
 #[derive(Clone, Debug)]
 pub enum Expr {
@@ -14,6 +18,7 @@ pub enum Expr {
 #[derive(Clone, Debug)]
 pub struct Function {
     pub name: Option<String>,
+    pub body: Box<Expr>,
 }
 
 #[derive(Clone, Debug)]

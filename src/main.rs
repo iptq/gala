@@ -1,16 +1,16 @@
+extern crate failure;
 extern crate gala;
 extern crate rustyline;
-extern crate failure;
 #[macro_use]
 extern crate structopt;
 
-use std::path::PathBuf;
 use std::fs::File;
 use std::io::Read;
+use std::path::PathBuf;
 
+use failure::Error;
 use rustyline::error::ReadlineError;
 use rustyline::Editor;
-use failure::Error;
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
@@ -39,18 +39,9 @@ fn main() -> Result<(), Error> {
                         rl.add_history_entry(line.as_ref());
                         println!("{:?}", gala::parser::parse_expr(&line));
                     }
-                    Err(ReadlineError::Interrupted) => {
-                        println!("CTRL-C");
-                        break;
-                    }
-                    Err(ReadlineError::Eof) => {
-                        println!("CTRL-D");
-                        break;
-                    }
-                    Err(err) => {
-                        println!("Error: {:?}", err);
-                        break;
-                    }
+                    Err(ReadlineError::Interrupted) => break,
+                    Err(ReadlineError::Eof) => break,
+                    Err(err) => panic!("Error: {:?}", err),
                 }
             }
         }

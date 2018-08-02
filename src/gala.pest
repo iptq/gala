@@ -12,7 +12,7 @@ decl_fn = { "fn" ~ ident ~ "(" ~ ")" ~ "=" ~ expr }
 decl_struct = { "struct" }
 
 expr = { anon_fn | literal }
-anon_fn = { "fn" ~ "(" ~ ")" ~ "=" ~ expr }
+anon_fn = { "fn" ~ ident ? ~ "(" ~ ")" ~ "=" ~ expr }
 
 // literals
 literal = { int }
