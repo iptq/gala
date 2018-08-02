@@ -30,10 +30,12 @@ op_div       = { "/" }
 op_mod       = { "%" }
 
 anon_fn = { "fn" ~ ident? ~ "(" ~ args? ~ ")" ~ "=" ~ expr }
-expr = { infix_expr | literal | anon_fn }
+cond_expr = { "if" ~ expr ~ "then" ~ expr ~ "else" ~ expr }
+expr = { infix_expr | cond_expr | var_name | literal | anon_fn }
+var_name = { ident }
 op = _{ op_or | op_and | op_lte | op_gte | op_lt | op_gt | op_eq | op_neq | op_add | op_sub | op_mul | op_div | op_mod }
 infix_expr = { value ~ (op ~ value)+ }
-value = _{ literal | "(" ~ expr ~ ")" }
+value = _{ var_name | literal | "(" ~ expr ~ ")" }
 
 // literals
 literal = { int }
