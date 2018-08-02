@@ -71,7 +71,6 @@ pub fn parse_line(input: &str) -> Result<ast::Expr, Error> {
 
 pub fn convert_decl(pair: Pair<Rule>) -> ast::Decl {
     assert_eq!(pair.as_rule(), Rule::decl);
-    println!("p: {:?}", pair);
     let mut decl = None;
     for p in pair.into_inner() {
         match p.as_rule() {
@@ -89,9 +88,7 @@ pub fn convert_expr(pair: Pair<Rule>) -> ast::Expr {
             Rule::anon_fn => expr = Some(ast::Expr::Fn(convert_function(p))),
             Rule::literal => expr = Some(ast::Expr::Lit(convert_literal(p))),
             Rule::infix_expr => {
-                println!("into_inner: {:?}", p.clone().into_inner());
                 let primary = |pair: Pair<Rule>| {
-                    println!(":=> {:?}", pair);
                     match pair.as_rule() {
                         Rule::literal => ast::Value::Lit(convert_literal(pair)),
                         Rule::expr => ast::Value::Expr(convert_expr(pair)),
