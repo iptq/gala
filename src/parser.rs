@@ -4,6 +4,7 @@ use pest::Parser;
 
 use ast;
 
+// force grammar changes to rebuild
 #[cfg(debug_assertions)]
 const _GRAMMAR: &'static str = include_str!("gala.pest");
 
