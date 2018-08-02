@@ -1,6 +1,6 @@
 //! Parser, based on Pest
 
-use failure::Error;
+use failure::{err_msg, Error};
 use pest::iterators::Pair;
 use pest::prec_climber::{Assoc, Operator, PrecClimber};
 use pest::Parser;
@@ -43,17 +43,22 @@ lazy_static! {
 pub fn parse_module(input: &str) -> Result<ast::Module, Error> {
     let mut pairs = match GalaParser::parse(Rule::module, input) {
         Ok(p) => p,
-        Err(e) => bail!("{:?}", e),
+        Err(e) => return Err(err_msg(format!("{}", e))),
     };
     let mut name = None;
     let mut decls = Vec::new();
     for p in pairs.next().unwrap().into_inner() {
         match p.as_rule() {
-            Rule::modname => {
+            Rule::modhead => {
                 name = Some(Symbol::from(format!(
                     "module:{}",
-                    p.into_span().as_str().to_owned()
-                )))
+                    p.into_inner()
+                        .next()
+                        .unwrap()
+                        .into_span()
+                        .as_str()
+                        .to_owned()
+                )));
             }
             Rule::decl => decls.push(convert_decl(p)),
             _ => unreachable!("unexpected {:?}", p),
@@ -68,7 +73,7 @@ pub fn parse_module(input: &str) -> Result<ast::Module, Error> {
 pub fn parse_line(input: &str) -> Result<ast::Expr, Error> {
     let mut pairs = match GalaParser::parse(Rule::line, input) {
         Ok(p) => p,
-        Err(e) => bail!("{:?}", e),
+        Err(e) => return Err(err_msg(format!("{}", e))),
     };
     let mut expr = None;
     for p in pairs.next().unwrap().into_inner() {

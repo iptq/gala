@@ -1,3 +1,4 @@
+#[macro_use]
 extern crate failure;
 extern crate gala;
 extern crate rustyline;
@@ -27,7 +28,14 @@ fn main() -> Result<(), Error> {
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
 
-            let ast = gala::parser::parse_module(&contents)?;
+            let ast;
+            match gala::parser::parse_module(&contents) {
+                Ok(v) => ast = v,
+                Err(e) => {
+                    eprintln!("{}", e);
+                    bail!(1);
+                }
+            }
             println!("ast: {:?}", ast);
             let anf = gala::anf::Module::from(ast);
             println!("anf: {:?}", anf);

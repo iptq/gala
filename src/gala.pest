@@ -3,8 +3,8 @@ whitespace = _{ " " | "\t" | "\n" | "\\\n" }
 linesep = _{ "\n" | ";" }
 
 // module for files
-module = { soi ~ (modname | decl)? ~ (linesep ~ decl)* ~ eoi }
-modname = { "module" ~ ident }
+module = { soi ~ modhead ~ decl? ~ (linesep ~ decl)* ~ eoi }
+modhead = { "mod" ~ ident }
 line = { soi ~ expr ~ eoi }
 
 decl = { decl_fn | decl_struct }

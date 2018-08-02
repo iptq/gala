@@ -66,7 +66,10 @@ pub mod convert {
 
     impl From<ast::Module> for anf::Module {
         fn from(module: ast::Module) -> Self {
-            anf::Module { name: module.name, body: module.body.into_iter().map(anf::Decl::from).collect() }
+            anf::Module {
+                name: module.name,
+                body: module.body.into_iter().map(anf::Decl::from).collect(),
+            }
         }
     }
 
