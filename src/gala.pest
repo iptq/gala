@@ -1,10 +1,17 @@
+// whitespace
+whitespace = _{ " " | "\t" | "\r" | "\n" }
+
 // module for files
 module = { soi ~ decl* ~ eoi }
 // stmt for the command-line
 stmt = { expr }
 
 decl = { decl_fn | decl_struct }
-decl_fn = { "fn" }
+decl_fn = { "fn" ~ ident }
 decl_struct = { "struct" }
 
 expr = { "lol" }
+
+// ident
+all_chars = _{ 'a'..'z' | 'A'..'Z' | "_" | '0'..'9' }
+ident = @{ ('a'..'z' | 'A'..'Z' | "_") ~ all_chars* }
