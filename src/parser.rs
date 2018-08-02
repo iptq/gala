@@ -31,6 +31,7 @@ pub fn parse_expr(input: &str) -> Result<ast::Expr, Error> {
         Ok(p) => p,
         Err(e) => bail!("{:?}", e),
     };
+    println!("expr:p: {:?}", pairs);
     Ok(convert_expr(pairs.next().unwrap()))
 }
 
@@ -48,9 +49,17 @@ pub fn convert_decl(pair: Pair<Rule>) -> ast::Decl {
 }
 
 pub fn convert_expr(pair: Pair<Rule>) -> ast::Expr {
-    ast::Expr::Literal
+    let p = pair.into_inner().next().unwrap();
+    match p.as_rule() {
+        Rule::literal => ast::Expr::Lit(convert_literal(p)),
+        _ => unreachable!("unexpected {:?}", p),
+    }
 }
 
 pub fn convert_function(pair: Pair<Rule>) -> ast::Function {
     ast::Function{name:"shiet".to_owned()}
+}
+
+pub fn convert_literal(pair: Pair<Rule>) -> ast::Literal {
+    ast::Literal::Int
 }
