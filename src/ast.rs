@@ -1,5 +1,7 @@
 //! Abstract Syntax Tree
 
+use symbol::Symbol;
+
 use literal::Literal;
 use op::Op;
 
@@ -13,7 +15,6 @@ pub struct BinOp {
 #[derive(Clone, Debug)]
 pub enum Decl {
     Fn(Function),
-    Enum(Enum),
 }
 
 #[derive(Clone, Debug)]
@@ -34,7 +35,8 @@ pub struct Function {
 
 #[derive(Clone, Debug)]
 pub struct Module {
-    pub decls: Vec<Decl>,
+    pub name: Symbol,
+    pub body: Vec<Decl>,
 }
 
 #[derive(Clone, Debug)]

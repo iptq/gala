@@ -4,6 +4,7 @@ use failure::Error;
 use pest::iterators::Pair;
 use pest::prec_climber::{Assoc, Operator, PrecClimber};
 use pest::Parser;
+use symbol::Symbol;
 
 use ast;
 use literal::Literal;
@@ -44,14 +45,24 @@ pub fn parse_module(input: &str) -> Result<ast::Module, Error> {
         Ok(p) => p,
         Err(e) => bail!("{:?}", e),
     };
+    let mut name = None;
     let mut decls = Vec::new();
     for p in pairs.next().unwrap().into_inner() {
         match p.as_rule() {
+            Rule::modname => {
+                name = Some(Symbol::from(format!(
+                    "module:{}",
+                    p.into_span().as_str().to_owned()
+                )))
+            }
             Rule::decl => decls.push(convert_decl(p)),
             _ => unreachable!("unexpected {:?}", p),
         }
     }
-    Ok(ast::Module { decls })
+    Ok(ast::Module {
+        name: name.unwrap_or(Symbol::from("module:main")),
+        body: decls,
+    })
 }
 
 pub fn parse_line(input: &str) -> Result<ast::Expr, Error> {
@@ -70,7 +81,6 @@ pub fn parse_line(input: &str) -> Result<ast::Expr, Error> {
 }
 
 pub fn convert_decl(pair: Pair<Rule>) -> ast::Decl {
-    assert_eq!(pair.as_rule(), Rule::decl);
     let mut decl = None;
     for p in pair.into_inner() {
         match p.as_rule() {

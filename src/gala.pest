@@ -1,9 +1,10 @@
 // whitespace
-whitespace = _{ " " | "\t" | "\\\n" }
+whitespace = _{ " " | "\t" | "\n" | "\\\n" }
 linesep = _{ "\n" | ";" }
 
 // module for files
-module = { soi ~ decl? ~ (linesep ~ decl)* ~ eoi }
+module = { soi ~ (modname | decl)? ~ (linesep ~ decl)* ~ eoi }
+modname = { "module" ~ ident }
 line = { soi ~ expr ~ eoi }
 
 decl = { decl_fn | decl_struct }

@@ -27,8 +27,10 @@ fn main() -> Result<(), Error> {
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
 
-            let module = gala::parser::parse_module(&contents);
-            println!("{:?}", module);
+            let ast = gala::parser::parse_module(&contents)?;
+            println!("ast: {:?}", ast);
+            let anf = gala::anf::Module::from(ast);
+            println!("anf: {:?}", anf);
         }
         None => {
             let mut rl = Editor::<()>::new();
