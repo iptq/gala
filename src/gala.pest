@@ -1,0 +1,10 @@
+// module for files
+module = { soi ~ decl* ~ eoi }
+// stmt for the command-line
+stmt = { expr }
+
+decl = { decl_fn | decl_struct }
+decl_fn = { "fn" }
+decl_struct = { "struct" }
+
+expr = { "lol" }
