@@ -88,19 +88,29 @@ pub fn convert_expr(pair: Pair<Rule>) -> ast::Expr {
             Rule::anon_fn => expr = Some(ast::Expr::Fn(convert_function(p))),
             Rule::literal => expr = Some(ast::Expr::Lit(convert_literal(p))),
             Rule::infix_expr => {
-                let primary = |pair: Pair<Rule>| {
-                    match pair.as_rule() {
-                        Rule::literal => ast::Value::Lit(convert_literal(pair)),
-                        Rule::expr => ast::Value::Expr(convert_expr(pair)),
-                        _ => unreachable!("unexpected {:?}", pair),
-                    }
+                let primary = |pair: Pair<Rule>| match pair.as_rule() {
+                    Rule::literal => ast::Value::Lit(convert_literal(pair)),
+                    Rule::expr => ast::Value::Expr(convert_expr(pair)),
+                    _ => unreachable!("unexpected {:?}", pair),
                 };
                 let infix = |left: ast::Value, op: Pair<Rule>, right: ast::Value| {
                     ast::Value::Expr(ast::Expr::BinOp(ast::BinOp {
                         left: Box::new(ast::Expr::from(left)),
                         right: Box::new(ast::Expr::from(right)),
                         op: match op.as_rule() {
+                            Rule::op_or => Op::Or,
+                            Rule::op_and => Op::And,
+                            Rule::op_lte => Op::Lte,
+                            Rule::op_gte => Op::Gte,
+                            Rule::op_lt => Op::Lt,
+                            Rule::op_gt => Op::Gt,
+                            Rule::op_eq => Op::Eq,
+                            Rule::op_neq => Op::Neq,
                             Rule::op_add => Op::Add,
+                            Rule::op_sub => Op::Sub,
+                            Rule::op_mul => Op::Mul,
+                            Rule::op_div => Op::Div,
+                            Rule::op_mod => Op::Mod,
                             _ => unreachable!(),
                         },
                     }))
