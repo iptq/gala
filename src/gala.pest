@@ -7,11 +7,11 @@ module = { soi ~ decl? ~ (linesep ~ decl)* ~ eoi }
 // stmt for the command-line
 stmt = { expr }
 
-decl = { decl_fn | decl_struct }
-decl_fn = { "fn" ~ ident ~ "(" ~ ")" ~ "=" ~ expr }
+decl = { function | decl_struct }
+function = { "fn" ~ ident ~ "(" ~ ")" ~ "=" ~ expr }
 decl_struct = { "struct" }
 
-expr = { literal }
+expr = { function | literal }
 
 // literals
 literal = { int }

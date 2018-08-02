@@ -7,6 +7,7 @@ pub enum Decl {
 
 #[derive(Clone, Debug)]
 pub enum Expr {
+    Fn(Function),
     Lit(Literal),
 }
 

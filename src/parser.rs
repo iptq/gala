@@ -41,7 +41,7 @@ pub fn convert_decl(pair: Pair<Rule>) -> ast::Decl {
     let mut decl = None;
     for p in pair.into_inner() {
         match p.as_rule() {
-            Rule::decl_fn => decl = Some(convert_function(p)),
+            Rule::function => decl = Some(convert_function(p)),
             _ => unreachable!("unexpected {:?}", p),
         }
     };
@@ -51,6 +51,7 @@ pub fn convert_decl(pair: Pair<Rule>) -> ast::Decl {
 pub fn convert_expr(pair: Pair<Rule>) -> ast::Expr {
     let p = pair.into_inner().next().unwrap();
     match p.as_rule() {
+        Rule::function => ast::Expr::Fn(convert_function(p)),
         Rule::literal => ast::Expr::Lit(convert_literal(p)),
         _ => unreachable!("unexpected {:?}", p),
     }
