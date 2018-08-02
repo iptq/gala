@@ -85,6 +85,29 @@ pub fn parse_line(input: &str) -> Result<ast::Expr, Error> {
     Ok(expr.unwrap())
 }
 
+pub fn convert_args(pair: Pair<Rule>) -> ast::Args {
+    let mut args = Vec::new();
+    for p in pair.into_inner() {
+        match p.as_rule() {
+            Rule::arg => {
+                let mut name = None;
+                for p in p.into_inner() {
+                    match p.as_rule() {
+                        Rule::ident => name = Some(p.into_span().as_str().to_owned()),
+                        _ => unreachable!("unexpected {:?}", p),
+                    }
+                }
+                args.push(ast::Arg {
+                    name: Symbol::from(name.unwrap()),
+                    ty: None,
+                });
+            }
+            _ => unreachable!("unexpected {:?}", p),
+        }
+    }
+    ast::Args(args)
+}
+
 pub fn convert_decl(pair: Pair<Rule>) -> ast::Decl {
     let mut decl = None;
     for p in pair.into_inner() {
@@ -140,17 +163,20 @@ pub fn convert_expr(pair: Pair<Rule>) -> ast::Expr {
 }
 
 pub fn convert_function(pair: Pair<Rule>) -> ast::Function {
+    let mut args = None;
     let mut name = None;
     let mut expr = None;
     for p in pair.into_inner() {
         match p.as_rule() {
-            Rule::ident => name = Some(p.into_span().as_str().to_owned()),
+            Rule::args => args = Some(convert_args(p)),
             Rule::expr => expr = Some(convert_expr(p)),
+            Rule::ident => name = Some(p.into_span().as_str().to_owned()),
             _ => unreachable!("unexpected {:?}", p),
         }
     }
     ast::Function {
         name,
+        args: args.unwrap_or(ast::Args(Vec::new())),
         body: Box::new(expr.unwrap()),
     }
 }

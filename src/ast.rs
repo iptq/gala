@@ -6,6 +6,15 @@ use literal::Literal;
 use op::Op;
 
 #[derive(Clone, Debug)]
+pub struct Arg {
+    pub name: Symbol,
+    pub ty: Option<Type>,
+}
+
+#[derive(Clone, Debug)]
+pub struct Args(pub Vec<Arg>);
+
+#[derive(Clone, Debug)]
 pub struct BinOp {
     pub left: Box<Expr>,
     pub op: Op,
@@ -29,6 +38,7 @@ pub enum Expr {
 
 #[derive(Clone, Debug)]
 pub struct Function {
+    pub args: Args,
     pub name: Option<String>,
     pub body: Box<Expr>,
 }
@@ -38,6 +48,9 @@ pub struct Module {
     pub name: Symbol,
     pub body: Vec<Decl>,
 }
+
+#[derive(Clone, Debug)]
+pub enum Type {}
 
 #[derive(Clone, Debug)]
 pub enum Value {

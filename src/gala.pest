@@ -3,12 +3,15 @@ whitespace = _{ " " | "\t" | "\n" | "\\\n" }
 linesep = _{ "\n" | ";" }
 
 // module for files
-module = { soi ~ modhead ~ decl? ~ (linesep ~ decl)* ~ eoi }
+module = { soi ~ modhead? ~ decl? ~ (linesep ~ decl?)* ~ eoi }
 modhead = { "mod" ~ ident }
 line = { soi ~ expr ~ eoi }
 
+arg = { ident }
+args = { (arg ~ ","?)* }
+
 decl = { decl_fn | decl_struct }
-decl_fn = { "fn" ~ ident ~ "(" ~ ")" ~ "=" ~ expr }
+decl_fn = { "fn" ~ ident ~ "(" ~ args? ~ ")" ~ "=" ~ expr }
 decl_struct = { "struct" }
 
 op_or        = @{ "or" ~ whitespace }
@@ -26,7 +29,7 @@ op_mul       = { "*" }
 op_div       = { "/" }
 op_mod       = { "%" }
 
-anon_fn = { "fn" ~ ident? ~ "(" ~ ")" ~ "=" ~ expr }
+anon_fn = { "fn" ~ ident? ~ "(" ~ args? ~ ")" ~ "=" ~ expr }
 expr = { infix_expr | literal | anon_fn }
 op = _{ op_or | op_and | op_lte | op_gte | op_lt | op_gt | op_eq | op_neq | op_add | op_sub | op_mul | op_div | op_mod }
 infix_expr = { value ~ (op ~ value)+ }
