@@ -20,7 +20,7 @@ pub fn parse_module(input: &str) -> Result<ast::Module, Error> {
     for p in pairs.next().unwrap().into_inner() {
         match p.as_rule() {
             Rule::decl => decls.push(convert_decl(p)), // println!("p: {:?}", p),
-            _ => unreachable!("Got {:?}", p),
+            _ => unreachable!("unexpected {:?}", p),
         }
     }
     Ok(ast::Module { decls })
@@ -29,5 +29,16 @@ pub fn parse_module(input: &str) -> Result<ast::Module, Error> {
 pub fn convert_decl(pair: Pair<Rule>) -> ast::Decl {
     assert_eq!(pair.as_rule(), Rule::decl);
     println!("p: {:?}", pair);
-    ast::Decl::Fn
+    let mut decl = None;
+    for p in pair.into_inner() {
+        match p.as_rule() {
+            Rule::decl_fn => decl = Some(convert_function(p)),
+            _ => unreachable!("unexpected {:?}", p),
+        }
+    };
+    ast::Decl::Fn(decl.unwrap())
+}
+
+pub fn convert_function(pair: Pair<Rule>) -> ast::Function {
+    ast::Function{name:"shiet".to_owned()}
 }

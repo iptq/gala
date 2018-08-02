@@ -7,7 +7,12 @@ pub struct Module {
 
 #[derive(Clone, Debug)]
 pub enum Decl {
-    Fn,
+    Fn(Function),
+}
+
+#[derive(Clone, Debug)]
+pub struct Function {
+    pub name: String,
 }
 
 #[derive(Clone, Debug)]

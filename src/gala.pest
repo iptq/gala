@@ -1,8 +1,9 @@
 // whitespace
 whitespace = _{ " " | "\t" | "\r" | "\n" }
+linesep = _{ "\n" | ";" }
 
 // module for files
-module = { soi ~ decl* ~ eoi }
+module = { soi ~ decl? ~ (linesep ~ decl)* ~ eoi }
 // stmt for the command-line
 stmt = { expr }
 
