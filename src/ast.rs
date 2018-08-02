@@ -13,7 +13,7 @@ pub enum Expr {
 
 #[derive(Clone, Debug)]
 pub struct Function {
-    pub name: String,
+    pub name: Option<String>,
 }
 
 #[derive(Clone, Debug)]
