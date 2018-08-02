@@ -10,8 +10,26 @@ decl = { decl_fn | decl_struct }
 decl_fn = { "fn" ~ ident ~ "(" ~ ")" ~ "=" ~ expr }
 decl_struct = { "struct" }
 
-expr = { anon_fn | literal }
+op_or        = @{ "or" ~ whitespace }
+op_and       = @{ "and" ~ whitespace }
+op_not       = @{ "not" ~ whitespace }
+op_lte       = { "<=" }
+op_gte       = { ">=" }
+op_lt        = { "<" }
+op_gt        = { ">" }
+op_eq        = { "==" }
+op_neq       = { "!=" }
+op_add       = { "+" }
+op_sub       = { "-" }
+op_mul       = { "*" }
+op_div       = { "/" }
+op_mod       = { "%" }
+
 anon_fn = { "fn" ~ ident? ~ "(" ~ ")" ~ "=" ~ expr }
+expr = { infix_expr | literal | anon_fn }
+op = _{ op_or | op_and | op_lte | op_gte | op_lt | op_gt | op_eq | op_neq | op_add | op_sub | op_mul | op_div | op_mod }
+infix_expr = { value ~ (op ~ value)+ }
+value = _{ literal | "(" ~ expr ~ ")" }
 
 // literals
 literal = { int }

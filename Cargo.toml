@@ -5,6 +5,7 @@ authors = ["Michael <localhost>"]
 
 [dependencies]
 failure = "0.1"
+lazy_static = "1.0"
 pest = "1.0"
 pest_derive = "1.0"
 rustyline = "1.0"

@@ -29,6 +29,7 @@ pub mod convert {
             match expr {
                 ast::Expr::Fn(_) => anf::Expr::C(anf::CExpr::D),
                 ast::Expr::Lit(lit) => anf::Expr::A(anf::AExpr::Lit(lit)),
+                _ => anf::Expr::C(anf::CExpr::D),
             }
         }
     }
