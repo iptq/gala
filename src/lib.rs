@@ -7,4 +7,5 @@ extern crate symbol;
 
 pub mod anf;
 pub mod ast;
+pub mod literal;
 pub mod parser;

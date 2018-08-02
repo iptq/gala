@@ -1,22 +1,21 @@
 // whitespace
-whitespace = _{ " " | "\t" | "\r" | "\n" }
+whitespace = _{ " " | "\t" | "\\\n" }
 linesep = _{ "\n" | ";" }
 
 // module for files
 module = { soi ~ decl? ~ (linesep ~ decl)* ~ eoi }
-// stmt for the command-line
-stmt = { expr }
+line = { soi ~ expr ~ eoi }
 
 decl = { decl_fn | decl_struct }
 decl_fn = { "fn" ~ ident ~ "(" ~ ")" ~ "=" ~ expr }
 decl_struct = { "struct" }
 
 expr = { anon_fn | literal }
-anon_fn = { "fn" ~ ident ? ~ "(" ~ ")" ~ "=" ~ expr }
+anon_fn = { "fn" ~ ident? ~ "(" ~ ")" ~ "=" ~ expr }
 
 // literals
 literal = { int }
-int = @{ "-" ? ~ ("0" | '1'..'9' ~ '0'..'9'*) }
+int = @{ "-"? ~ ("0" | '1'..'9' ~ '0'..'9'*) }
 
 // ident
 all_chars = _{ 'a'..'z' | 'A'..'Z' | "_" | '0'..'9' }

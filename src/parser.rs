@@ -5,6 +5,7 @@ use pest::iterators::Pair;
 use pest::Parser;
 
 use ast;
+use literal::Literal;
 
 // force grammar changes to rebuild
 #[cfg(debug_assertions)]
@@ -29,13 +30,13 @@ pub fn parse_module(input: &str) -> Result<ast::Module, Error> {
     Ok(ast::Module { decls })
 }
 
-pub fn parse_expr(input: &str) -> Result<ast::Expr, Error> {
-    let mut pairs = match GalaParser::parse(Rule::expr, input) {
+pub fn parse_line(input: &str) -> Result<ast::Expr, Error> {
+    let mut pairs = match GalaParser::parse(Rule::line, input) {
         Ok(p) => p,
         Err(e) => bail!("{:?}", e),
     };
-    println!("expr:p: {:?}", pairs);
-    Ok(convert_expr(pairs.next().unwrap()))
+    let pair = pairs.next().unwrap();
+    Ok(convert_expr(pair.into_inner().next().unwrap()))
 }
 
 pub fn convert_decl(pair: Pair<Rule>) -> ast::Decl {
@@ -76,6 +77,10 @@ pub fn convert_function(pair: Pair<Rule>) -> ast::Function {
     }
 }
 
-pub fn convert_literal(pair: Pair<Rule>) -> ast::Literal {
-    ast::Literal::Int
+pub fn convert_literal(pair: Pair<Rule>) -> Literal {
+    let p = pair.into_inner().next().unwrap();
+    match p.as_rule() {
+        Rule::int => Literal::Int,
+        _ => unreachable!("unexpected {:?}", p),
+    }
 }

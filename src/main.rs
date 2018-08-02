@@ -32,18 +32,29 @@ fn main() -> Result<(), Error> {
         }
         None => {
             let mut rl = Editor::<()>::new();
+            match rl.load_history("history.txt") {
+                _ => (), // i don't care lol
+            }
             loop {
                 let readline = rl.readline(">> ");
                 match readline {
                     Ok(line) => {
                         rl.add_history_entry(line.as_ref());
-                        println!("{:?}", gala::parser::parse_expr(&line));
+                        match gala::parser::parse_line(&line) {
+                            Ok(ast) => {
+                                println!("ast: {:?}", ast);
+                                let anf = gala::anf::Expr::from(ast);
+                                println!("anf: {:?}", anf);
+                            }
+                            Err(err) => eprintln!("{:?}", err),
+                        }
                     }
                     Err(ReadlineError::Interrupted) => break,
                     Err(ReadlineError::Eof) => break,
                     Err(err) => panic!("Error: {:?}", err),
                 }
             }
+            rl.save_history("history.txt")?;
         }
     }
     Ok(())

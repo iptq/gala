@@ -1,5 +1,7 @@
 //! Abstract Syntax Tree
 
+use literal::Literal;
+
 #[derive(Clone, Debug)]
 pub enum Decl {
     Fn(Function),
@@ -19,11 +21,6 @@ pub enum Expr {
 pub struct Function {
     pub name: Option<String>,
     pub body: Box<Expr>,
-}
-
-#[derive(Clone, Debug)]
-pub enum Literal {
-    Int,
 }
 
 #[derive(Clone, Debug)]
