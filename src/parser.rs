@@ -26,6 +26,14 @@ pub fn parse_module(input: &str) -> Result<ast::Module, Error> {
     Ok(ast::Module { decls })
 }
 
+pub fn parse_expr(input: &str) -> Result<ast::Expr, Error> {
+    let mut pairs = match GalaParser::parse(Rule::expr, input) {
+        Ok(p) => p,
+        Err(e) => bail!("{:?}", e),
+    };
+    Ok(convert_expr(pairs.next().unwrap()))
+}
+
 pub fn convert_decl(pair: Pair<Rule>) -> ast::Decl {
     assert_eq!(pair.as_rule(), Rule::decl);
     println!("p: {:?}", pair);
@@ -37,6 +45,10 @@ pub fn convert_decl(pair: Pair<Rule>) -> ast::Decl {
         }
     };
     ast::Decl::Fn(decl.unwrap())
+}
+
+pub fn convert_expr(pair: Pair<Rule>) -> ast::Expr {
+    ast::Expr::Literal
 }
 
 pub fn convert_function(pair: Pair<Rule>) -> ast::Function {

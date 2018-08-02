@@ -16,4 +16,6 @@ pub struct Function {
 }
 
 #[derive(Clone, Debug)]
-pub enum Expr {}
+pub enum Expr {
+    Literal,
+}

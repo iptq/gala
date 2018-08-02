@@ -11,7 +11,11 @@ decl = { decl_fn | decl_struct }
 decl_fn = { "fn" ~ ident ~ "(" ~ ")" ~ "=" ~ expr }
 decl_struct = { "struct" }
 
-expr = { "lol" }
+expr = { literal }
+
+// literals
+literal = { int }
+int = @{ "-" ? ~ ("0" | '1'..'9' ~ '0'..'9'*) }
 
 // ident
 all_chars = _{ 'a'..'z' | 'A'..'Z' | "_" | '0'..'9' }

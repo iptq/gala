@@ -11,7 +11,7 @@ fn main() {
         match readline {
             Ok(line) => {
                 rl.add_history_entry(line.as_ref());
-                println!("{:?}", gala::parser::parse_module(&line));
+                println!("{:?}", gala::parser::parse_expr(&line));
             }
             Err(ReadlineError::Interrupted) => {
                 println!("CTRL-C");
