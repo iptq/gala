@@ -1,6 +1,6 @@
 use failure::Error;
-use pest::Parser;
 use pest::iterators::Pair;
+use pest::Parser;
 
 use ast;
 
@@ -16,12 +16,18 @@ pub fn parse_module(input: &str) -> Result<ast::Module, Error> {
         Ok(p) => p,
         Err(e) => bail!("{:?}", e),
     };
-    let decls = Vec::new();
+    let mut decls = Vec::new();
     for p in pairs.next().unwrap().into_inner() {
         match p.as_rule() {
-            Rule::decl => println!("p: {:?}", p),
+            Rule::decl => decls.push(convert_decl(p)), // println!("p: {:?}", p),
             _ => unreachable!("Got {:?}", p),
         }
     }
     Ok(ast::Module { decls })
+}
+
+pub fn convert_decl(pair: Pair<Rule>) -> ast::Decl {
+    assert_eq!(pair.as_rule(), Rule::decl);
+    println!("p: {:?}", pair);
+    ast::Decl::Fn
 }

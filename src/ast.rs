@@ -6,7 +6,9 @@ pub struct Module {
 }
 
 #[derive(Clone, Debug)]
-pub enum Decl {}
+pub enum Decl {
+    Fn,
+}
 
 #[derive(Clone, Debug)]
 pub enum Expr {}

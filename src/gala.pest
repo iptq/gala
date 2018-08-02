@@ -7,7 +7,7 @@ module = { soi ~ decl* ~ eoi }
 stmt = { expr }
 
 decl = { decl_fn | decl_struct }
-decl_fn = { "fn" ~ ident }
+decl_fn = { "fn" ~ ident ~ "(" ~ ")" ~ "=" ~ expr }
 decl_struct = { "struct" }
 
 expr = { "lol" }
