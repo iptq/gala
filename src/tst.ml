@@ -1,4 +1,4 @@
-(* Abstract Syntax Tree *)
+(* Typed Syntax Tree *)
 
 open Core
 
@@ -11,21 +11,16 @@ and stmt =
   | Let of string * expr
 [@@deriving sexp]
 
-and func = {
+and fn_decl = {
   name: string;
-  type_hint: Common.ty option;
   body: stmt list;
   return: expr;
 }
 [@@deriving sexp]
 
-type item =
-  | StructItem
-[@@deriving sexp]
-
 type decl =
-  | ItemDecl of string * item
-  | FnDecl of func
+  | StructDecl
+  | FnDecl of fn_decl
 [@@deriving sexp]
 
 type prog = decl list

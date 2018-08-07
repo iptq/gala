@@ -1,6 +1,10 @@
+type a = struct
+
 fn main =
-  let x =
-  return 1
+  let x = 1
+  return x
+
+type b = struct
 
 fn fibonacci =
   return

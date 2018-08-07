@@ -14,6 +14,7 @@ and field = {
 
 and ty =
   | UnitT
+  | IntT
   | FnT of fn_type
 [@@deriving sexp]
 
