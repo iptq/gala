@@ -5,7 +5,7 @@ type expr =
 [@@deriving sexp]
 
 and stmt =
-  | Return of expr
+  | Let of string * expr
 [@@deriving sexp]
 
 and fn_decl = {

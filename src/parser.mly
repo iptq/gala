@@ -4,7 +4,7 @@
 %}
 
 %token EOF NEWLINE
-%token KW_FN KW_RETURN
+%token KW_FN KW_LET KW_RETURN
 %token SYM_COLON SYM_EQUALS SYM_LPAREN SYM_RPAREN SYM_SEMI SYM_UNIT
 
 %token<int> NUMBER
@@ -15,17 +15,19 @@
 %type<expr> expr return_stmt
 %type<const> const
 
-%type<Ast.decl> decl
+%type<Ast.decl> decl decl_wrap
+%type<Ast.stmt> stmt stmt_wrap
 %type<Ast.prog> prog
 
 %%
 
 (* start *)
 
-prog: decl+ EOF { $1 }
+prog: decl_wrap+ EOF { $1 }
+decl_wrap: decl NEWLINE* { $1 }
 decl:
-  | KW_FN IDENT SYM_EQUALS NEWLINE* return=return_stmt NEWLINE* {
-      FnDecl { name = $2; body = []; return = return }
+  | KW_FN name=IDENT SYM_EQUALS NEWLINE* stmts=stmt_wrap* return=return_stmt {
+      FnDecl { name = name; body = stmts; return = return }
     }
 
 (* exprs *)
@@ -37,7 +39,9 @@ const:
 
 (* stmts *)
 
-stmt: return_stmt linesep { }
+stmt_wrap: stmt linesep { $1 }
+stmt: let_stmt { $1 }
+let_stmt: KW_LET name=IDENT SYM_EQUALS { Let(name, Const(Unit)) }
 return_stmt: KW_RETURN expr=expr? { match expr with None -> Const(Unit) | Some v -> v }
 
 (* util *)

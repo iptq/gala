@@ -17,6 +17,7 @@ rule token = parse
 
   (* keywords *)
   | "fn" { KW_FN }
+  | "let" { KW_LET }
   | "return" { KW_RETURN }
 
   | '-'? ['0'-'9']+ as n { NUMBER(int_of_string n) }
