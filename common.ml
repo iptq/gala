@@ -15,10 +15,12 @@ and field = {
 and ty =
   | UnitT
   | IntT
+  | StringT
   | FnT of fn_type
 [@@deriving sexp]
 
 type const =
   | Unit
   | Int of int
+  | String of string
 [@@deriving sexp]

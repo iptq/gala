@@ -1,0 +1,19 @@
+OASISFormat: 0.4
+Name: gala0
+Version: 0.1.0
+BuildTools: corebuild, ocamlbuild
+
+Synopsis: Bootstrap interpreter for the gala language
+Authors: Michael Zhang
+License: MIT
+
+Library "gala"
+  Path: .
+  Modules: Parser, Lexer, Ast, Common
+
+Executable "gala0"
+  Path: .
+  CompiledObject: byte
+  BuildDepends: gala
+  MainIs: eval.ml
+

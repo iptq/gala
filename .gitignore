@@ -1,3 +1,11 @@
 _build
+_tags
 target
 *.byte
+
+setup.data
+setup.ml
+myocamlbuild.ml
+
+*.mldylib
+*.mllib

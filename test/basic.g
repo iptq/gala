@@ -1,11 +1,9 @@
 type a = struct
 
-fn main =
+fn main(): int =
   let x = 1
   return x
 
-type b = struct
-
-fn fibonacci =
+fn fibonacci() =
   return
 

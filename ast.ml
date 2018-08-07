@@ -9,6 +9,8 @@ type expr =
 
 and stmt =
   | Let of string * expr
+  | Print of expr
+  | Return of expr
 [@@deriving sexp]
 
 and func = {
