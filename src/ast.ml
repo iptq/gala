@@ -4,12 +4,19 @@ type expr =
   | Const of Common.const
 [@@deriving sexp]
 
-type fn_decl = {
+and stmt =
+  | Return of expr
+[@@deriving sexp]
+
+and fn_decl = {
   name: string;
+  body: stmt list;
+  return: expr;
 }
 [@@deriving sexp]
 
 type decl =
+  | StructDecl
   | FnDecl of fn_decl
 [@@deriving sexp]
 

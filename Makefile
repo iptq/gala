@@ -3,13 +3,13 @@
 OCB_FLAGS = -use-ocamlfind -use-menhir -I src
 OCB = corebuild $(OCB_FLAGS)
 
-all: cesk
+all: eval.byte 
 
 clean:
 	$(OCB) -clean
 
-cesk: sanity
-	$(OCB) cesk.byte
+eval.byte: sanity
+	$(OCB) $@
 
 sanity:
 	which menhir
