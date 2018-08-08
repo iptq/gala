@@ -7,6 +7,7 @@ type node =
   | Value of value
   | Expr of expr
   | Decl of decl
+  | Stmt of stmt
 [@@deriving sexp]
 
 and expr =

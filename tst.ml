@@ -1,15 +1,26 @@
 (* Typed Syntax Tree *)
 
+open Common
 open Sexplib
 open Sexplib.Std
 
-type expr =
-  | Const of Common.const
-  | Var of string
+type node =
+  | Value of value
+  | Expr of expr
+  | Stmt of stmt
+[@@deriving sexp]
+
+and expr =
+  | Const of Common.const * ty
+  | Var of string * ty
+[@@deriving sexp]
+
+and value =
+  | ConstV of Common.const * ty
 [@@deriving sexp]
 
 and stmt =
-  | Let of string * expr
+  | Let of string * expr * ty
 [@@deriving sexp]
 
 and fn_decl = {
@@ -24,8 +35,4 @@ type decl =
   | FnDecl of fn_decl
 [@@deriving sexp]
 
-type prog = decl list
-[@@deriving sexp]
-
 let string_of_expr (e: expr) = e |> sexp_of_expr |> Sexp.to_string_hum ~indent:4
-let string_of_prog (p: prog) = p |> sexp_of_prog |> Sexp.to_string_hum ~indent:4
