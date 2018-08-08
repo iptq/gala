@@ -1,19 +1,19 @@
 OASISFormat: 0.4
-Name: gala0
+Name: gala
 Version: 0.1.0
-BuildTools: corebuild, ocamlbuild
-
-Synopsis: Bootstrap interpreter for the gala language
+Synopsis: Bootstrap interpreter
 Authors: Michael Zhang
 License: MIT
+BuildTools: ocamlbuild
 
-Library "gala"
+Library gala
   Path: .
-  Modules: Parser, Lexer, Ast, Common
+  BuildDepends: menhirLib, sexplib, ppx_deriving, ppx_sexp_conv, ppx_custom_printf
+  Modules: Ast, Common, Lexer, Parse, Parser, Tst
 
-Executable "gala0"
-  Path: .
+Executable gala0
   CompiledObject: byte
-  BuildDepends: gala
+  Path: .
+  BuildDepends: gala, menhirLib
   MainIs: eval.ml
 

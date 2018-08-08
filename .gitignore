@@ -4,8 +4,7 @@ target
 *.byte
 
 setup.data
-setup.ml
-myocamlbuild.ml
+setup.log
 
 *.mldylib
 *.mllib

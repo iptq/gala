@@ -1,4 +1,4 @@
-open Core
+open Sexplib.Std
 
 type fn_type = {
   args: field list;

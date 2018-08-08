@@ -1,6 +1,7 @@
 (* Typed Syntax Tree *)
 
-open Core
+open Sexplib
+open Sexplib.Std
 
 type expr =
   | Const of Common.const

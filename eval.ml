@@ -1,7 +1,7 @@
 open Lexer
 open Lexing
 open Map
-open Parser
+open Parse
 
 module StringMap = Map.Make(String)
 type environment = Ast.decl StringMap.t
@@ -34,20 +34,21 @@ let _ =
     (exit 1)
   end else
     (* prepare *)
-    let open MenhirLib.General in
-    let module Interp = Parser.MenhirInterpreter in
 
     (* parse input *)
     let ic = open_in Sys.argv.(1) in
     let lexbuf = Lexing.from_channel ic in
-    let prog = Parser.prog Lexer.token lexbuf in
-
-    (* evaluate *)
-    (* Ast.string_of_prog prog |> print_endline; *)
-    let global = load_in StringMap.empty prog in
-    let main = (match StringMap.find_opt "main" global with
-      | Some (FnDecl v) -> v
-      | None -> raise (Failure "No main function found.")
-    ) in
-    eval_in (global::[]) main;
+    match parse Parser.Incremental.prog lexbuf with
+    | `Success prog -> begin
+        (* evaluate *)
+        (* Ast.string_of_prog prog |> print_endline; *)
+        let global = load_in StringMap.empty prog in
+        let main = (match StringMap.find_opt "main" global with
+          | Some (FnDecl v) -> v
+          | _ -> raise (Failure "No main function found.")
+        ) in
+        let _ = eval_in (global::[]) main in
+        ()
+      end
+    | `Error (line, message) -> print_endline ("Error " ^ message ^ " on line " ^ (string_of_int line))
 ;;

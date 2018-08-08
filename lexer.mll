@@ -1,6 +1,10 @@
 {
   open Parser
-  exception SyntaxError of string
+
+  exception Error of string * Lexing.position
+  let lexing_error lexbuf =
+	let invalid_input = String.make 1 (Lexing.lexeme_char lexbuf 0) in
+	raise (Error (invalid_input, lexbuf.Lexing.lex_curr_p))
 }
 
 rule token = parse
@@ -30,13 +34,13 @@ rule token = parse
   | '-'? ['0'-'9']+ as n { NUMBER(int_of_string n) }
   | ['A'-'Z' 'a'-'z' '_'] ['A'-'Z' 'a'-'z' '0'-'9' '_']* as s { IDENT(s) }
 
-  | _ { raise (SyntaxError ("Unexpected char: " ^ Lexing.lexeme lexbuf)) }
+  | _ { lexing_error lexbuf }
   | eof { EOF }
 
 and str buf = parse
   | '\\' '"' { Buffer.add_char buf '"'; str buf lexbuf }
   | '"' { STRING(Buffer.contents buf) }
   | [^ '"' '\\']+ { Buffer.add_string buf (Lexing.lexeme lexbuf); str buf lexbuf }
-  | _ { raise (SyntaxError ("Illegal string character: " ^ Lexing.lexeme lexbuf)) }
-  | eof { raise (SyntaxError "Unterminated string literal.") }
+  | _ { lexing_error lexbuf }
+  | eof { lexing_error lexbuf }
 
