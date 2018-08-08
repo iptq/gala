@@ -5,15 +5,12 @@ let _ =
     print_endline "Usage: eval [file.g]";
     (exit 1)
   end else
-    (* prepare *)
-
     (* parse input *)
-    let ic = open_in Sys.argv.(1) in
-    let lexbuf = Lexing.from_channel ic in
+    let lexbuf = Parse.lexbuf_of_file Sys.argv.(1) in
     match Parse.parse Parser.Incremental.prog lexbuf with
     | `Success prog -> begin
         (* evaluate *)
-        (* Ast.string_of_prog prog |> print_endline; *)
+        Ast.string_of_prog prog |> print_endline;
         let global = Eval.load_in StringMap.empty prog in
         let main = (match StringMap.find_opt "main" global with
           | Some (FnDecl v) -> v

@@ -4,8 +4,19 @@ open Sexplib
 open Sexplib.Std
 
 type expr =
+  | SideEffect of stmt * expr
   | Const of Common.const
   | Var of string
+  | Call of expr * expr list
+  | If of expr * expr * expr
+  | BinOp of expr * op * expr
+[@@deriving sexp]
+
+and op =
+  | Add
+  | Sub
+  | Mul
+  | Div
 [@@deriving sexp]
 
 and stmt =

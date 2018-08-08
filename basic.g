@@ -1,9 +1,9 @@
 type a = struct
 
 fn main(): int =
-  let x = 1
+  print "Hello, world!"
+  let x = fibonacci(5)
   return x
 
-fn fibonacci() =
-  return
-
+fn fibonacci(n: int): int =
+  return n * fibonacci(n - 1)

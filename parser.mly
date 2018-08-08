@@ -4,8 +4,8 @@
 %}
 
 %token EOF NEWLINE
-%token KW_FN KW_INT KW_LET KW_MATCH KW_PRINT KW_RETURN KW_STRUCT KW_TYPE
-%token SYM_COLON SYM_EQUALS SYM_LPAREN SYM_RPAREN SYM_SEMI SYM_UNIT
+%token KW_ELSE KW_FN KW_IF KW_INT KW_LET KW_MATCH KW_PRINT KW_RETURN KW_STRUCT KW_THEN KW_TYPE
+%token SYM_COLON SYM_COMMA SYM_DASH SYM_EQUALS SYM_LPAREN SYM_PLUS SYM_RPAREN SYM_SEMI SYM_SLASH SYM_STAR SYM_UNIT
 
 %token<int> NUMBER
 %token<string> IDENT STRING
@@ -20,6 +20,7 @@
 %type<Ast.func> func
 %type<Ast.item> item
 %type<Ast.decl> decl decl_wrap
+%type<Ast.stmt list> block
 %type<Ast.stmt> stmt stmt_wrap let_stmt print_stmt
 %type<Ast.prog> prog
 
@@ -36,11 +37,19 @@ item_decl: KW_TYPE name=IDENT SYM_EQUALS item=item { ItemDecl(name, item) }
 item:
   | KW_STRUCT { StructItem }
 func_decl: func=func { FnDecl(func) }
+func_arg: name=IDENT ty=fn_type_hint? { { name = name; ty = ty } }
 func_args:
   | SYM_UNIT { [] }
+  | SYM_LPAREN args=func_arg+ SYM_RPAREN { args }
+func_call:
+  | SYM_UNIT { [] }
   | SYM_LPAREN SYM_RPAREN { [] }
+  | SYM_LPAREN first=expr rest=func_call_rest SYM_COMMA? SYM_RPAREN { first :: rest }
+func_call_rest:
+  | { [] }
+  | SYM_COMMA expr func_call_rest { $2 :: $3 }
 func:
-  | KW_FN name=IDENT args=func_args type_hint=fn_type_hint? SYM_EQUALS NEWLINE* stmts=stmt_wrap* {
+  | KW_FN name=IDENT args=func_args type_hint=fn_type_hint? SYM_EQUALS NEWLINE* stmts=block {
       { name = name; args = args; type_hint = type_hint; body = stmts; }
     }
 fn_type_hint: SYM_COLON type_literal { $2 }
@@ -50,15 +59,25 @@ type_literal:
 (* exprs *)
 
 expr:
+  | stmt=stmt linesep expr=expr { SideEffect(stmt, expr) }
   | const { Const($1) }
   | IDENT { Var($1) }
+  | expr func_call { Call($1, $2) }
+  | KW_IF cond=expr KW_THEN cont=expr KW_ELSE alt=expr { If(cond, cont, alt) }
+  | expr op expr { BinOp($1, $2, $3) }
 const:
   | SYM_UNIT { Unit }
   | NUMBER { Int($1) }
   | STRING { String($1) }
+op:
+  | SYM_PLUS { Add }
+  | SYM_DASH { Sub }
+  | SYM_STAR { Mul }
+  | SYM_SLASH { Div }
 
 (* stmts *)
 
+block: stmt_wrap+ { $1 }
 stmt_wrap: stmt linesep { $1 }
 stmt:
   | let_stmt { $1 }
