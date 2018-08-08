@@ -26,5 +26,8 @@ let rec repl (state:Eval.state) =
     | Failure msg ->
         print_endline msg;
         repl state
+    | Eval.RuntimeError msg ->
+        print_endline msg;
+        repl state
 
 let _ = repl [generate_intrinsics ()]
