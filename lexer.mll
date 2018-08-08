@@ -11,6 +11,7 @@ rule token = parse
   | [' ' '\r' '\t'] { token lexbuf }
   | '\\' '\n' { token lexbuf (* escape newline *) }
   | ['\n'] { Lexing.new_line lexbuf; NEWLINE }
+  | '/' '/' { line_comment lexbuf }
 
   (* symbols *)
   | '(' ')' { SYM_UNIT }
@@ -49,3 +50,6 @@ and str buf = parse
   | _ { lexing_error lexbuf }
   | eof { lexing_error lexbuf }
 
+and line_comment = parse
+  | '\n' { token lexbuf }
+  | _ { line_comment lexbuf }

@@ -2,8 +2,11 @@ type a = struct
 
 fn main(): int =
   print "Hello, world!"
-  let x = fibonacci(5)
+  // let x = incr(5)
+  let x = 1 + 1
+  let y = 2 + 2
+  print x + y + 3
   return x
 
-fn fibonacci(n: int): int =
-  return n * fibonacci(n - 1)
+fn incr(n: int): int =
+  return n + 1

@@ -59,6 +59,7 @@ type_literal:
 (* exprs *)
 
 expr:
+  | SYM_LPAREN expr SYM_RPAREN { $2 }
   | stmt=stmt linesep expr=expr { SideEffect(stmt, expr) }
   | const { Const($1) }
   | IDENT { Var($1) }

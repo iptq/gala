@@ -3,13 +3,25 @@
 open Sexplib
 open Sexplib.Std
 
-type expr =
+type node =
+  | Value of value
+  | Expr of expr
+  | Decl of decl
+[@@deriving sexp]
+
+and expr =
   | SideEffect of stmt * expr
   | Const of Common.const
   | Var of string
   | Call of expr * expr list
   | If of expr * expr * expr
   | BinOp of expr * op * expr
+[@@deriving sexp]
+
+and value =
+  | Intrinsic of (value list -> value)
+  | Closure of stmt list (* TODO: actually use a closure *)
+  | ConstV of Common.const
 [@@deriving sexp]
 
 and op =
@@ -21,6 +33,7 @@ and op =
 
 and stmt =
   | Let of string * expr
+  (* TODO: move print to intrinsics *)
   | Print of expr
   | Return of expr
 [@@deriving sexp]
@@ -42,11 +55,11 @@ and func = {
 }
 [@@deriving sexp]
 
-type item =
+and item =
   | StructItem
 [@@deriving sexp]
 
-type decl =
+and decl =
   | ItemDecl of string * item
   | FnDecl of func
 [@@deriving sexp]

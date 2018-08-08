@@ -1,4 +1,5 @@
 open Eval
+open Intrinsics
 
 let _ = 
   if Array.length Sys.argv < 2 then begin
@@ -11,9 +12,10 @@ let _ =
     | `Success prog -> begin
         (* evaluate *)
         Ast.string_of_prog prog |> print_endline;
-        let global = Eval.load_in StringMap.empty prog in
+        let intrinsics = generate_intrinsics () in
+        let global = Eval.load_in intrinsics prog in
         let main = (match StringMap.find_opt "main" global with
-          | Some (FnDecl v) -> v
+          | Some (Ast.Decl (FnDecl v)) -> v
           | _ -> raise (Failure "No main function found.")
         ) in
         let _ = Eval.eval_in (global::[]) main in
