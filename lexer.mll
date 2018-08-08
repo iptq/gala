@@ -9,12 +9,11 @@
 
 rule token = parse
   | [' ' '\r' '\t'] { token lexbuf }
-  | ['\n'] { NEWLINE }
+  | ['\n'] { Lexing.new_line lexbuf; NEWLINE }
 
   (* symbols *)
   | '(' ')' { SYM_UNIT }
   | '"' { str (Buffer.create 40) lexbuf }
-
   | ':' { SYM_COLON }
   | '=' { SYM_EQUALS }
   | '(' { SYM_LPAREN }

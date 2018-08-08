@@ -1,15 +1,41 @@
-.PHONY: all clean
+# OASIS_START
+# DO NOT EDIT (digest: a3c674b4239234cbbe53afe090018954)
 
-OCB_FLAGS = -use-ocamlfind -use-menhir -I src
-OCB = corebuild $(OCB_FLAGS)
+SETUP = ocaml setup.ml
 
-all: eval.byte 
+build: setup.data
+	$(SETUP) -build $(BUILDFLAGS)
+
+doc: setup.data build
+	$(SETUP) -doc $(DOCFLAGS)
+
+test: setup.data build
+	$(SETUP) -test $(TESTFLAGS)
+
+all:
+	$(SETUP) -all $(ALLFLAGS)
+
+install: setup.data
+	$(SETUP) -install $(INSTALLFLAGS)
+
+uninstall: setup.data
+	$(SETUP) -uninstall $(UNINSTALLFLAGS)
+
+reinstall: setup.data
+	$(SETUP) -reinstall $(REINSTALLFLAGS)
 
 clean:
-	$(OCB) -clean
+	$(SETUP) -clean $(CLEANFLAGS)
 
-eval.byte: sanity
-	$(OCB) $@
+distclean:
+	$(SETUP) -distclean $(DISTCLEANFLAGS)
 
-sanity:
-	which menhir
+setup.data:
+	$(SETUP) -configure $(CONFIGUREFLAGS)
+
+configure:
+	$(SETUP) -configure $(CONFIGUREFLAGS)
+
+.PHONY: build doc test all install uninstall reinstall clean distclean configure
+
+# OASIS_STOP

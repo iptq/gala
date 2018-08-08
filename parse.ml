@@ -1,6 +1,6 @@
 type parse_error =
   | SyntaxError of string * Lexing.position
-  | ParseError of message option * Lexing.position * Lexing.position
+  | ParseError of message * Lexing.position * Lexing.position
 and message = string
 
 exception Error of parse_error
@@ -29,9 +29,15 @@ let parse fn lexbuf =
     match Interp.stack env with
     | lazy Nil -> assert false
     | lazy (Cons (Interp.Element (state, _, start_pos, end_pos), _)) ->
-            (* todo: the fucking .messages thing *)
-            let message = Some("u done fucked") in
-            raise (Error (ParseError (message, start_pos, end_pos)))
+            let buf = Buffer.create 128 in
+            Printf.bprintf buf "current state: %d\n" (Interp.current_state_number env);
+            begin try
+              let message = Parser_messages.message (Interp.number state) in
+              Printf.bprintf buf "%s\n" message;
+            with
+              | Not_found -> ()
+            end;
+            raise (Error (ParseError (Buffer.contents buf, start_pos, end_pos)))
   with
     | Error err -> begin match err with
         | SyntaxError (invalid_input, err_pos) -> `Error (0, "lol")
@@ -46,10 +52,7 @@ let parse fn lexbuf =
               else Printf.sprintf "char %d" start_char in
             let buf = Buffer.create 128 in
             Printf.bprintf buf "Parsing error: %s, %s:\n" lines chars;
-            begin match message with
-              | None -> ()
-              | Some msg -> Printf.bprintf buf "\n%s\n" msg
-            end;
+            Printf.bprintf buf "\n%s\n" message;
             `Error (start_line, Buffer.contents buf)
         end
       end

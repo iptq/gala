@@ -5,6 +5,7 @@ Synopsis: Bootstrap interpreter
 Authors: Michael Zhang
 License: MIT
 BuildTools: ocamlbuild
+Plugins: META (0.4), DevFiles (0.4)
 
 Library gala
   Path: .

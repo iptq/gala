@@ -16,6 +16,7 @@
 %type<const> const
 %type<ty> fn_type_hint type_literal
 
+%type<Ast.func_args> func_args
 %type<Ast.func> func
 %type<Ast.item> item
 %type<Ast.decl> decl decl_wrap
@@ -35,9 +36,12 @@ item_decl: KW_TYPE name=IDENT SYM_EQUALS item=item { ItemDecl(name, item) }
 item:
   | KW_STRUCT { StructItem }
 func_decl: func=func { FnDecl(func) }
+func_args:
+  | SYM_UNIT { [] }
+  | SYM_LPAREN SYM_RPAREN { [] }
 func:
-  | KW_FN name=IDENT SYM_LPAREN SYM_RPAREN type_hint=fn_type_hint? SYM_EQUALS NEWLINE* stmts=stmt_wrap* return=return_stmt {
-      { name = name; type_hint = type_hint; body = stmts; return = return }
+  | KW_FN name=IDENT args=func_args type_hint=fn_type_hint? SYM_EQUALS NEWLINE* stmts=stmt_wrap* {
+      { name = name; args = args; type_hint = type_hint; body = stmts; }
     }
 fn_type_hint: SYM_COLON type_literal { $2 }
 type_literal:

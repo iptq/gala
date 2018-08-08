@@ -14,11 +14,20 @@ and stmt =
   | Return of expr
 [@@deriving sexp]
 
+and field = {
+  name: string;
+  ty: Common.ty option;
+}
+[@@deriving sexp]
+
+and func_args = field list
+[@@deriving sexp]
+
 and func = {
   name: string;
+  args: func_args;
   type_hint: Common.ty option;
   body: stmt list;
-  return: expr;
 }
 [@@deriving sexp]
 

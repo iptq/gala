@@ -16,7 +16,7 @@ let rec load_in (env:environment) (decls:Ast.decl list) =
       load_in (StringMap.add name decl env) rest
 
 let eval_in (state:state) (func:Ast.func): state =
-  let all_stmts = func.body @ [Return(func.return)] in
+  let all_stmts = func.body in
   let rec eval_single (state:state) (stmt:Ast.stmt): state =
     match stmt with
     | Let (name, expr) -> print_endline "let"; state
