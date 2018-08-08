@@ -1,0 +1,35 @@
+# OASIS_START
+# DO NOT EDIT (digest: 19bef8ee02bb11cd6d94cd3ea31d5df2)
+# Ignore VCS directories, you can use the same kind of rule outside
+# OASIS_START/STOP if you want to exclude directories that contains
+# useless stuff for the build process
+true: annot, bin_annot
+<**/.svn>: -traverse
+<**/.svn>: not_hygienic
+".bzr": -traverse
+".bzr": not_hygienic
+".hg": -traverse
+".hg": not_hygienic
+".git": -traverse
+".git": not_hygienic
+"_darcs": -traverse
+"_darcs": not_hygienic
+# Library gala
+"gala.cmxs": use_gala
+<*.ml{,i,y}>: pkg_core_kernel
+<*.ml{,i,y}>: pkg_ppx_deriving
+<*.ml{,i,y}>: pkg_ppx_sexp_conv
+# Executable gala0
+"eval.byte": pkg_base
+"eval.byte": pkg_core
+"eval.byte": pkg_menhirLib
+<*.ml{,i,y}>: pkg_base
+<*.ml{,i,y}>: pkg_core
+<*.ml{,i,y}>: pkg_menhirLib
+# OASIS_STOP
+
+true: debug
+true: use_menhir
+<*.ml>: thread
+<parser.*>: explain, menhir_table
+

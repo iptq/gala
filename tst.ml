@@ -1,15 +1,26 @@
-open Core
+(* Typed Syntax Tree *)
+
+open Sexplib
+open Sexplib.Std
 
 type expr =
   | Const of Common.const
+  | Var of string
 [@@deriving sexp]
 
-type fn_decl = {
+and stmt =
+  | Let of string * expr
+[@@deriving sexp]
+
+and fn_decl = {
   name: string;
+  body: stmt list;
+  return: expr;
 }
 [@@deriving sexp]
 
 type decl =
+  | StructDecl
   | FnDecl of fn_decl
 [@@deriving sexp]
 

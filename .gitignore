@@ -1,2 +1,12 @@
 _build
+_tags
+target
+*.native
 *.byte
+*.docdir
+
+setup.data
+setup.log
+
+*.mldylib
+*.mllib

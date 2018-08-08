@@ -1,0 +1,20 @@
+OASISFormat: 0.4
+Name: gala
+Version: 0.1.0
+Synopsis: Bootstrap interpreter
+Authors: Michael Zhang
+License: MIT
+BuildTools: ocamlbuild
+Plugins: META (0.4), DevFiles (0.4)
+
+Library gala
+  Path: .
+  BuildDepends: menhirLib, sexplib, ppx_deriving, ppx_sexp_conv, ppx_custom_printf
+  Modules: Ast, Common, Lexer, Parse, Parser, Tst
+
+Executable gala0
+  CompiledObject: byte
+  Path: .
+  BuildDepends: gala, menhirLib
+  MainIs: gala0.ml
+
