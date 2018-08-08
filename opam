@@ -1,0 +1,18 @@
+opam-version: "1.2"
+name: "gala"
+version: "0.1.0"
+maintainer: "Michael Zhang"
+authors: "Michael Zhang"
+homepage: "https://github.com/iptq/gala"
+bug-reports: "https://github.com/iptq/gala/issues"
+license: "MIT"
+dev-repo: "https://github.com/iptq/gala.git"
+build: [
+  ["./configure" "--prefix=%{prefix}%"]
+  [make]
+]
+install: [make "install"]
+remove: [make "uninstall"]
+depends: [
+  "ocamlfind" {build}
+]
