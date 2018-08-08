@@ -16,5 +16,5 @@ Executable gala0
   CompiledObject: byte
   Path: .
   BuildDepends: gala, menhirLib
-  MainIs: eval.ml
+  MainIs: gala0.ml
 
