@@ -24,10 +24,10 @@ let rec repl (state:Eval.state) =
           end
     with
     | Failure msg ->
-        print_endline msg;
+        print_endline ("Failure: " ^ msg);
         repl state
     | Eval.RuntimeError msg ->
-        print_endline msg;
+        print_endline ("RuntimeError: " ^ msg);
         repl state
 
 let _ = repl [generate_intrinsics ()]
