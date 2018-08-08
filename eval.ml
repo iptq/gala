@@ -20,6 +20,11 @@ let rec state_top_get state key =
   | [] -> None
   | env :: rest -> match StringMap.find_opt key env with Some thing -> Some thing | None -> state_top_get rest key
 
+let print_value value =
+  match value with
+  | Ast.ConstV (String s) -> print_endline s
+  | Ast.ConstV (Int i) -> print_endline (string_of_int i)
+
 let rec load_in (env:environment) (decls:Ast.decl list) =
   match decls with
   | [] -> env
@@ -58,10 +63,7 @@ and eval_single (state:state) (stmt:Ast.stmt): state =
   | Let (name, expr) ->
       let state, value = eval_expr state expr in
       state_top_set state name (Ast.Value value)
-  | Print expr -> let (_, value) = eval_expr state expr in begin match value with
-        | Ast.ConstV (String s) -> print_endline s
-        | Ast.ConstV (Int i) -> print_endline (string_of_int i)
-      end;
+  | Print expr -> let (_, value) = eval_expr state expr in print_value value;
       state
   | Return expr -> print_endline "return"; state
 

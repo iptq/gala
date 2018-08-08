@@ -51,5 +51,5 @@ and str buf = parse
   | eof { lexing_error lexbuf }
 
 and line_comment = parse
-  | '\n' { token lexbuf }
+  | '\n' { Lexing.new_line lexbuf; token lexbuf }
   | _ { line_comment lexbuf }

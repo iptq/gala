@@ -13,8 +13,13 @@ Library gala
   Modules: Ast, Common, Lexer, Parse, Parser, Tst
 
 Executable gala0
-  CompiledObject: byte
+  CompiledObject: best
   Path: .
   BuildDepends: gala, menhirLib
   MainIs: gala0.ml
 
+Executable gala0i
+  CompiledObject: best
+  Path: .
+  BuildDepends: gala, menhirLib
+  MainIs: repl.ml

@@ -5,7 +5,7 @@ fn main(): int =
   // let x = incr(5)
   let x = 1 + 1
   let y = 2 + 2
-  print x + y + 3
+  print (x + y + 3)
   return x
 
 fn incr(n: int): int =

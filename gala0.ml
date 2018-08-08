@@ -12,13 +12,14 @@ let _ =
     | `Success prog -> begin
         (* evaluate *)
         Ast.string_of_prog prog |> print_endline;
+        print_endline "\n\nEXECUTION\n---------";
         let intrinsics = generate_intrinsics () in
         let global = Eval.load_in intrinsics prog in
         let main = (match StringMap.find_opt "main" global with
           | Some (Ast.Decl (FnDecl v)) -> v
           | _ -> raise (Failure "No main function found.")
         ) in
-        let _ = Eval.eval_in (global::[]) main in
+        let _ = Eval.eval_in [global] main in
         ()
       end
     | `Error (line, message) -> print_endline ("Error " ^ message ^ " on line " ^ (string_of_int line))

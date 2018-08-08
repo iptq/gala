@@ -32,6 +32,7 @@ and op =
 [@@deriving sexp]
 
 and stmt =
+  | ExprS of expr
   | Let of string * expr
   (* TODO: move print to intrinsics *)
   | Print of expr

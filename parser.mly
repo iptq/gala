@@ -10,19 +10,20 @@
 %token<int> NUMBER
 %token<string> IDENT STRING
 
-%start prog
+%start prog line exprline
 
-%type<expr> expr return_stmt
 %type<const> const
 %type<ty> fn_type_hint type_literal
 
 %type<Ast.func_args> func_args
 %type<Ast.func> func
+%type<Ast.expr> exprline expr return_stmt
 %type<Ast.item> item
 %type<Ast.decl> decl decl_wrap
 %type<Ast.stmt list> block
-%type<Ast.stmt> stmt stmt_wrap let_stmt print_stmt
+%type<Ast.stmt> line stmt stmt_wrap let_stmt print_stmt
 %type<Ast.prog> prog
+%type<Ast.op> op
 
 %%
 
@@ -58,8 +59,8 @@ type_literal:
 
 (* exprs *)
 
+exprline: expr EOF { $1 }
 expr:
-  | SYM_LPAREN expr SYM_RPAREN { $2 }
   | stmt=stmt linesep expr=expr { SideEffect(stmt, expr) }
   | const { Const($1) }
   | IDENT { Var($1) }
@@ -78,6 +79,7 @@ op:
 
 (* stmts *)
 
+line: stmt EOF { $1 }
 block: stmt_wrap+ { $1 }
 stmt_wrap: stmt linesep { $1 }
 stmt:
@@ -86,7 +88,7 @@ stmt:
   | return_stmt { Return($1) }
 let_stmt: KW_LET name=IDENT SYM_EQUALS expr=expr { Let(name, expr) }
 print_stmt: KW_PRINT expr=expr { Print(expr) }
-return_stmt: KW_RETURN expr=expr? { match expr with None -> Const(Unit) | Some v -> v }
+return_stmt: KW_RETURN expr=expr? { match expr with Some v -> v | None -> Const(Unit) }
 
 (* util *)
 

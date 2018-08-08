@@ -1,7 +1,7 @@
 type parse_error =
   | SyntaxError of string * Lexing.position
-  | ParseError of message * Lexing.position * Lexing.position
-and message = string
+  | ParseError of string * Lexing.position * Lexing.position
+  | Generic of string
 
 exception Error of parse_error
 
@@ -34,10 +34,8 @@ let parse fn lexbuf =
       | Interp.HandlingError env -> env
       | _ -> assert false in
     match Interp.stack env with
-      | lazy Nil -> assert false
+      | lazy Nil -> raise (Error (ParseError ("Unknown error", lexbuf.lex_start_p, lexbuf.lex_curr_p)))
       | lazy (Cons (Interp.Element (state, _, _, _), _)) ->
-          let (token, left, right) = input () in
-          (* Printf.printf ":: (%d, %d) (%d, %d)" left.pos_lnum (left.pos_cnum - left.pos_bol) right.pos_lnum (right.pos_cnum - right.pos_bol); *)
           let buf = Buffer.create 128 in
           Printf.bprintf buf "current state: %d\n" (Interp.current_state_number env);
           begin try
@@ -46,9 +44,10 @@ let parse fn lexbuf =
           with
             | Not_found -> ()
           end;
-          raise (Error (ParseError (Buffer.contents buf, left, right)))
+          raise (Error (ParseError (Buffer.contents buf, lexbuf.lex_start_p, lexbuf.lex_curr_p)))
   with
     | Error err -> begin match err with
+        | Generic message -> `Error(0, message)
         | SyntaxError (invalid_input, err_pos) -> `Error (0, "lol")
         | ParseError (message, start_pos, end_pos) -> begin
             let buf = Buffer.create 128 in
@@ -56,33 +55,37 @@ let parse fn lexbuf =
             let _, curr_line, curr_char = position end_pos in
 
             (* print preview *)
-            let ic = open_in file in
-            let line_counter = ref 1 in
-            let hl = ref false in
-            let preview_start_line = start_line in
-            let preview_end_line = curr_line in
-            let start_hl = "\x1b[31;1;4m" in
-            let end_hl = "\x1b[0m" in
-            print_endline "\n";
             begin try
-              while true; do
-                let line = input_line ic in
-                let len = String.length line in
-                if !line_counter >= preview_start_line && !line_counter <= preview_end_line then
-                  begin
-                    if !line_counter = start_line then
-                      if !line_counter <> curr_line then (!hl = true; print_string ("  | " ^ (String.sub line 0 start_char) ^ start_hl ^ (String.sub line start_char (len - start_char)) ^ end_hl ^ "\n"))
-                      else print_string ("  | " ^ (String.sub line 0 start_char) ^ start_hl ^ (String.sub line start_char (curr_char - start_char)) ^ end_hl ^ (String.sub line curr_char (len - curr_char)))
-                    else
-                      if !line_counter = curr_line then (!hl = false; print_string ("  | " ^ start_hl ^ (String.sub line 0 curr_char) ^ end_hl ^ (String.sub line curr_char (len - curr_char)) ^ "\n"))
-                      else print_endline ("  | " ^ (if !hl then start_hl else "") ^ line ^ end_hl)
-                  end;
-                incr line_counter;
-              done;
+              let ic = open_in file in
+              let line_counter = ref 1 in
+              let hl = ref false in
+              let preview_start_line = start_line in
+              let preview_end_line = curr_line in
+              let start_hl = "\x1b[31;1;4m" in
+              let end_hl = "\x1b[0m" in
+              print_endline "\n";
+              begin try
+                while true; do
+                  let line = input_line ic in
+                  let len = String.length line in
+                  if !line_counter >= preview_start_line && !line_counter <= preview_end_line then
+                    begin
+                      if !line_counter = start_line then
+                        if !line_counter <> curr_line then (!hl = true; print_string ("  | " ^ (String.sub line 0 start_char) ^ start_hl ^ (String.sub line start_char (len - start_char)) ^ end_hl ^ "\n"))
+                        else print_string ("  | " ^ (String.sub line 0 start_char) ^ start_hl ^ (String.sub line start_char (curr_char - start_char)) ^ end_hl ^ (String.sub line curr_char (len - curr_char)))
+                      else
+                        if !line_counter = curr_line then (!hl = false; print_string ("  | " ^ start_hl ^ (String.sub line 0 curr_char) ^ end_hl ^ (String.sub line curr_char (len - curr_char)) ^ "\n"))
+                        else print_endline ("  | " ^ (if !hl then start_hl else "") ^ line ^ end_hl)
+                    end;
+                  incr line_counter;
+                done;
+              with
+                End_of_file -> close_in ic;
+              end;
+              print_endline "\n";
             with
-              End_of_file -> close_in ic;
+              _ -> () (* whatever *)
             end;
-            print_endline "\n";
             
             (* line numbers *)
             let lines =
