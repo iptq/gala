@@ -28,13 +28,18 @@ rule token = parse
   | '*' { SYM_STAR }
 
   (* keywords *)
+  | "else" { KW_ELSE }
+  | "false" { KW_FALSE }
   | "fn" { KW_FN }
+  | "if" { KW_IF }
   | "int" { KW_INT }
   | "let" { KW_LET }
   | "match" { KW_MATCH }
   | "print" { KW_PRINT }
   | "return" { KW_RETURN }
   | "struct" { KW_STRUCT }
+  | "then" { KW_THEN }
+  | "true" { KW_TRUE }
   | "type" { KW_TYPE }
 
   | '-'? ['0'-'9']+ as n { NUMBER(int_of_string n) }

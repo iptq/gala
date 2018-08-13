@@ -14,6 +14,7 @@ and field = {
 
 and ty =
   | UnitT
+  | BoolT
   | IntT
   | StringT
   | FnT of fn_type
@@ -21,6 +22,8 @@ and ty =
 
 type const =
   | Unit
+  | True
+  | False
   | Int of int
   | String of string
 [@@deriving sexp]

@@ -34,7 +34,7 @@ let parse fn lexbuf =
       | Interp.HandlingError env -> env
       | _ -> assert false in
     match Interp.stack env with
-      | lazy Nil -> raise (Error (ParseError ("Unknown error", lexbuf.lex_start_p, lexbuf.lex_curr_p)))
+      | lazy Nil -> raise (Error (ParseError ("No stack", lexbuf.lex_start_p, lexbuf.lex_curr_p)))
       | lazy (Cons (Interp.Element (state, _, _, _), _)) ->
           let buf = Buffer.create 128 in
           Printf.bprintf buf "current state: %d\n" (Interp.current_state_number env);

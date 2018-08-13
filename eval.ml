@@ -49,6 +49,13 @@ let rec eval_expr (state:state) (expr:Ast.expr) =
         | (state, Ast.Closure closure) -> (state, closure)
         | _ -> raise (RuntimeError "waht the fuc u doin bro")
       in (state, Ast.ConstV (Common.Unit))
+  | If (cond, cont, alt) ->
+      let state, cond = eval_expr state cond in
+      begin match cond with
+        | Ast.ConstV Common.True -> eval_expr state cont
+        | Ast.ConstV Common.False -> eval_expr state alt
+        | _ -> raise (RuntimeError "Condition is not a boolean")
+      end
   | BinOp (left, op, right) ->
       let state, left = eval_expr state left in
       let state, right = eval_expr state right in

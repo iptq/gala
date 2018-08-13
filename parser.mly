@@ -4,7 +4,7 @@
 %}
 
 %token EOF NEWLINE
-%token KW_ELSE KW_FN KW_IF KW_INT KW_LET KW_MATCH KW_PRINT KW_RETURN KW_STRUCT KW_THEN KW_TYPE
+%token KW_ELSE KW_FALSE KW_FN KW_IF KW_INT KW_LET KW_MATCH KW_PRINT KW_RETURN KW_STRUCT KW_THEN KW_TRUE KW_TYPE
 %token SYM_COLON SYM_COMMA SYM_DASH SYM_EQUALS SYM_LPAREN SYM_PLUS SYM_RPAREN SYM_SEMI SYM_SLASH SYM_STAR SYM_UNIT
 
 %token<int> NUMBER
@@ -62,7 +62,7 @@ type_literal:
 exprline: expr EOF { $1 }
 expr:
   | SYM_LPAREN expr SYM_RPAREN { $2 }
-  | stmt=stmt linesep expr=expr { SideEffect(stmt, expr) }
+  | stmt=stmt SYM_SEMI expr=expr { SideEffect(stmt, expr) }
   | const { Const($1) }
   | IDENT { Var($1) }
   | expr func_call { Call($1, $2) }
@@ -70,6 +70,8 @@ expr:
   | expr op expr { BinOp($1, $2, $3) }
 const:
   | SYM_UNIT { Unit }
+  | KW_TRUE { True }
+  | KW_FALSE { False }
   | NUMBER { Int($1) }
   | STRING { String($1) }
 op:
