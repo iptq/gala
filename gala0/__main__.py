@@ -2,6 +2,7 @@
 Entrypoint for the compiler.
 """
 
+import sys
 import argparse
 import gala0
 
@@ -13,4 +14,4 @@ if __name__ == "__main__":
     with open(args.file, "r") as f:
         source = f.read()
 
-    gala0.compile(source)
+    sys.exit(gala0.compile(source))

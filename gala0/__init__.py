@@ -15,10 +15,10 @@ def compile(data, out=None):
     p = Program(raw_tree)
     print(repr(p))
 
-    ir = p.convert()
-    print("===")
+    anf = p.convert()
+    print("GENERATED LLVM IR ==========")
     print(ir)
-    print("---")
+    print("----------------------------")
 
     f = NamedTemporaryFile()
     f.write(bytes(ir, "utf-8"))
@@ -26,18 +26,32 @@ def compile(data, out=None):
 
     asm = NamedTemporaryFile(suffix=".S")
     p = Popen(["llc", f.name, "-o", asm.name], stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
-    output = p.stdout.read()
+    stdout, stderr = p.communicate()
     f.close()
     print()
-    print("LLC OUTPUT =================")
-    print(output.decode("utf-8"))
+    print("LLC STDOUT =================")
+    print(stdout.decode("utf-8"))
+    if stderr:
+        print("LLC STDERR =================")
+        print(stderr.decode("utf-8"))
     print("----------------------------")
+    if p.returncode != 0:
+        asm.close()
+        return p.returncode
 
     with open(out, "wb") as f:
         p = Popen(["gcc", asm.name, "-o", f.name], stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
-        output = p.stdout.read()
+        stdout, stderr = p.communicate()
         asm.close()
         print()
-        print("GCC OUTPUT =================")
-        print(output.decode("utf-8"))
+        print("GCC STDOUT =================")
+        print(stdout.decode("utf-8"))
+        if stderr:
+            print("GCC STDERR =================")
+            print(stderr.decode("utf-8"))
         print("----------------------------")
+        if p.returncode != 0:
+            f.close()
+            return p.returncode
+
+    return 0

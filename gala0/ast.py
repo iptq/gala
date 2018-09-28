@@ -1,3 +1,5 @@
+import gala0.anf
+
 __all__ = [
     "Function",
     "Program",
@@ -19,6 +21,24 @@ class ASTNode(Convert, metaclass=ASTMeta):
         return "{}{}".format(self.__class__.__name__, repr(vars(self)))
 
 # ========================================================
+
+class BinOp(ASTNode):
+    """
+    binop: expr op expr
+    """
+    def __init__(self, tree):
+        assert tree.data == "binop"
+        assert len(tree.children) == 3
+        self.left = Expr(tree.children[0]).into()
+        self.op = Op(tree.children[1])
+        self.right = Expr(tree.children[2]).into()
+
+    def convert(self, locals, globals):
+        return "{} {} {}".format(
+            self.left.convert(locals, globals),
+            self.op.convert(locals, globals),
+            self.right.convert(locals, globals),
+        )
 
 class Body(ASTNode):
     """
@@ -46,15 +66,23 @@ class Decl(ASTNode):
 
 class Expr(ASTNode):
     """
-    expr: path
+    expr: binop
+        | path
         | literal
-        | expr op expr
         | expr "[" expr "]"
         | expr "(" fn_call_args ")"
         | expr "." expr
     """
     def __init__(self, tree):
-        print(tree)
+        self.tree = tree
+
+    def into(self):
+        if len(self.tree.children) == 1:
+            child = self.tree.children[0]
+            if child.data == "binop":
+                return BinOp(child)
+            elif child.data == "literal":
+                return Literal(child).into()
 
 class Function(ASTNode):
     """
@@ -67,15 +95,57 @@ class Function(ASTNode):
                 self.name = child.children[0].value
             if child.data == "body":
                 self.body = Body(child).into()
-        # print("\n\n".join([str(child) for child in tree.children]))
 
     def convert(self, globals):
-        print(globals)
+        locals = []
+        stmts = []
+        for stmt in self.body:
+            stmts.append(stmt.convert(locals=locals, globals=globals))
         return """
         define i32 @{name} () {{
-            ret i32 5
+            {stmts}
         }}
-        """.format(name=self.name)
+        """.format(name=self.name, stmts="\n".join(stmts))
+
+class Literal(ASTNode):
+    """
+    literal: number
+        | string
+    """
+    def __init__(self, tree):
+        assert tree.data == "literal"
+        assert len(tree.children) == 1
+        self.child = tree.children[0]
+
+    def into(self):
+        if self.child.data == "number":
+            return Number(self.child)
+        else:
+            return String(self.child)
+
+class Number(ASTNode):
+    """
+    number: /[1-9][0-9]*/
+    """
+    def __init__(self, tree):
+        assert tree.data == "number"
+        assert len(tree.children) == 1
+        self.value = tree.children[0]
+
+    def convert(self, locals, globals):
+        return str(self.value)
+
+class Op(ASTNode):
+    """
+    op: /==/ | /\<=/ | /\*/ | /-/ | /\+/
+    """
+    def __init__(self, tree):
+        assert tree.data == "op"
+        assert len(tree.children) == 1
+        self.op = tree.children[0]
+
+    def convert(self, locals, globals):
+        return self.op
 
 class Program(ASTNode):
     """ program: (decl _NL*)+ """
@@ -99,10 +169,10 @@ class ReturnStmt(ASTNode):
     """
     def __init__(self, tree):
         assert len(tree.children) == 1
-        self.ret = Expr(tree.children[0])
+        self.expr = Expr(tree.children[0]).into()
 
-    def convert(self):
-        return "ret"
+    def convert(self, locals, globals):
+        return "ret i32 {}".format(self.expr.convert(locals, globals))
 
 class Stmt(ASTNode):
     """

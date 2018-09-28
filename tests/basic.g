@@ -1,2 +1,2 @@
 fn main(args: String List): int =
-    return 17
+    return 1 + 1

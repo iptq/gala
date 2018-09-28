@@ -8,7 +8,6 @@ _NL: /(\n[\t ]*)+/
 
 name: /[A-Za-z_][A-Za-z0-9_]*/
 path: name ("." name)*
-number: /[0-9]+(\.[0-9]*)?/
 string: /\"([^"\\]|\\n)*\"/
 unit: /\(\)/
 
@@ -41,9 +40,3 @@ else_stmt: "else" body
          | "else" if_stmt
 
 fn_call_args: (expr ("," expr)* ","?)?
-
-literal: number
-       | string
-
-op: "==" | "<="
-  | "*" | "-"
