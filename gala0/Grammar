@@ -7,13 +7,10 @@
 _NL: /(\n[\t ]*)+/
 
 name: /[A-Za-z_][A-Za-z0-9_]*/
-path: name ("::" name)*
+path: name ("." name)*
 number: /[0-9]+(\.[0-9]*)?/
 string: /\"([^"\\]|\\n)*\"/
 unit: /\(\)/
-
-program: (decl _NL*)+
-decl: use_decl | toplevel_fn_decl | type_decl
 
 use_decl: "use" name
 type_decl: "type" param_type_literal? decl_type_annot "=" type_decl_body
@@ -34,27 +31,15 @@ type_variable: /\'[a-z]+/
 decl_type_annot: ":" decl_type_literal
 decl_type_literal: "struct" | "enum" | "trait"
 
-toplevel_fn_decl: method_fn_decl
-                | fn_decl
-fn_decl: "fn" name "(" fn_args ")" type_annot? "=" body
 method_fn_decl: "fn" "(" type_literal ")" name "(" fn_args ")" type_annot? "=" body
 fn_arg: name type_annot | "self"
 fn_args: (fn_arg ("," fn_arg)* ","?)?
-body: _NL* _INDENT (stmt _NL*)+ _DEDENT
 
-stmt: expr | assign_stmt | if_stmt | else_stmt | return_stmt
 assign_stmt: expr "=" expr
 if_stmt: "if" expr body
 else_stmt: "else" body
          | "else" if_stmt
 
-return_stmt: "return" expr
-expr: path
-    | literal
-    | expr op expr
-    | expr "[" expr "]"
-    | expr "(" fn_call_args ")"
-    | expr "." expr
 fn_call_args: (expr ("," expr)* ","?)?
 
 literal: number
