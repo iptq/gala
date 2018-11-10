@@ -1,0 +1,32 @@
+use std::str::FromStr;
+
+use ast;
+
+grammar;
+
+pub Program: ast::Program = <decls:TopDecl+> => ast::Program(decls);
+
+TopDecl: ast::TopDecl = {
+    "fn" <name:r"[A-Za-z_][A-Za-z0-9_]*"> "(" ")" ":" <stmts:Stmt*> "end" => ast::TopDecl::Fn(name.to_owned(), stmts),
+};
+
+Stmt: ast::Stmt = {
+    <name:r"[A-Za-z_][A-Za-z0-9_]*"> "=" <expr:Expr> => ast::Stmt::Assign(name.to_owned(), expr),
+    <expr:Expr> => ast::Stmt::Expr(expr),
+    "if" <cond:Expr> ":" <body1:Stmt+> "end" => ast::Stmt::If(cond, body1),
+};
+
+Expr: ast::Expr = {
+    <left:Expr> "+" <right:Term> => ast::Expr::Plus(Box::new(left), Box::new(right)),
+    <left:Expr> "-" <right:Term> => ast::Expr::Minus(Box::new(left), Box::new(right)),
+    <right:Term> => right,
+};
+
+Term: ast::Expr = {
+    <literal:Literal> => ast::Expr::Literal(literal),
+    <name:r"[A-Za-z_][A-Za-z0-9_]*"> => ast::Expr::Name(name.to_owned()),
+};
+
+Literal: ast::Literal = {
+    <int:r"[0-9]+"> => ast::Literal::Int(u32::from_str(int).unwrap()),
+};
