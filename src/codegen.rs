@@ -180,6 +180,17 @@ impl Codegen for ast::Stmt {
                 emitter.push_line(format!("br label %L{}", letter_of_number(done_label)));
                 emitter.push_line(format!("L{}:", letter_of_number(done_label)));
             }
+            Stmt::Return(expr) => {
+                match expr {
+                    Some(expr) => {
+                        let expr = expr.generate(emitter);
+                        emitter.push_line(format!("ret i32 %i{}", expr));
+                    },
+                    None => {
+                        emitter.push_line(format!("ret void"));
+                    }
+                }
+            }
         }
     }
 }

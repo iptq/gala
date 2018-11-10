@@ -7,13 +7,26 @@ grammar;
 pub Program: ast::Program = <decls:TopDecl+> => ast::Program(decls);
 
 TopDecl: ast::TopDecl = {
-    "fn" <name:r"[A-Za-z_][A-Za-z0-9_]*"> "(" ")" ":" <stmts:Stmt*> "end" => ast::TopDecl::Fn(name.to_owned(), stmts),
+    "fn" <name:r"[A-Za-z_][A-Za-z0-9_]*"> "(" ")" ":" <stmts:Body> "end" => ast::TopDecl::Fn(name.to_owned(), stmts),
 };
+
+Body: Vec<ast::Stmt> = {
+    <f:Stmt?> <stmts:(";" <Stmt>)*> ";"? => match f {
+        None => stmts,
+        Some(s) => {
+            let mut stmts = stmts;
+            stmts.insert(0, s);
+            stmts
+        },
+    }
+};
+
 
 Stmt: ast::Stmt = {
     <name:r"[A-Za-z_][A-Za-z0-9_]*"> "=" <expr:Expr> => ast::Stmt::Assign(name.to_owned(), expr),
     <expr:Expr> => ast::Stmt::Expr(expr),
-    "if" <cond:Expr> ":" <body1:Stmt+> "end" => ast::Stmt::If(cond, body1),
+    "if" <cond:Expr> ":" <body1:Body> "end" => ast::Stmt::If(cond, body1),
+    "return" <expr:Expr?> => ast::Stmt::Return(expr),
 };
 
 Expr: ast::Expr = {

@@ -19,9 +19,15 @@ pub enum Stmt {
     Assign(String, Expr),
     Expr(Expr),
     If(Expr, Vec<Stmt>),
+    Return(Option<Expr>),
 }
 
 #[derive(Debug)]
 pub enum Literal {
     Int(u32),
+}
+
+#[derive(Debug)]
+pub enum Type {
+
 }

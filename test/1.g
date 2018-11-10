@@ -1,11 +1,14 @@
 fn fib():
     if 1:
-        y = 3
+        w = 3;
     end
 end
 
 fn main():
-    x = 1
-    y = x + 2
-    z = x + y + 3
+    x = 1;
+    y = x + 2;
+    z = x + y + 3;
+    if x:
+        u = 3;
+    end
 end
