@@ -129,6 +129,9 @@ impl Codegen for mir::TopDecl {
     fn generate(&self, emitter: &mut Emitter) {
         use mir::TopDecl;
         match self {
+            TopDecl::Extern(name, ty) => {
+                emitter.push_line(format!("declare i32 @{}(i8* nocapture) nounwind", name));
+            }
             TopDecl::Fn(name, ty, stmts) => {
                 emitter.push_line(format!("define i32 @{}() {{", name));
                 emitter.push_line("entry:");
@@ -157,26 +160,39 @@ impl Codegen for mir::Stmt {
             Stmt::Expr(expr) => {
                 expr.generate(emitter);
             }
-            Stmt::If(cond, body1) => {
+            Stmt::If(cond, body1, body2) => {
                 let cond = cond.generate(emitter);
                 let cmp = emitter.next_int();
-                let succ_label = emitter.next_int();
-                let done_label = emitter.next_int();
+                let succ_label = letter_of_number(emitter.next_int());
+                let fail_label = letter_of_number(emitter.next_int());
+                let done_label = letter_of_number(emitter.next_int());
                 emitter.push_line(format!("%i{} = icmp ne i32 %i{}, 0", cmp, cond));
                 emitter.push_line(format!(
                     "br i1 %i{}, label %L{}, label %L{}",
                     cmp,
-                    letter_of_number(succ_label),
-                    letter_of_number(done_label)
+                    succ_label,
+                    match &body2 {
+                        Some(_) => fail_label.clone(),
+                        None => done_label.clone(),
+                    }
                 ));
-                emitter.push_line(format!("L{}:", letter_of_number(succ_label)));
+                emitter.push_line(format!("L{}:", succ_label));
                 emitter.scope();
                 for stmt in body1 {
                     stmt.generate(emitter);
                 }
                 emitter.pop();
-                emitter.push_line(format!("br label %L{}", letter_of_number(done_label)));
-                emitter.push_line(format!("L{}:", letter_of_number(done_label)));
+                emitter.push_line(format!("br label %L{}", done_label));
+                if let Some(body) = body2 {
+                    emitter.push_line(format!("L{}:", fail_label));
+                    emitter.scope();
+                    for stmt in body {
+                        stmt.generate(emitter);
+                    }
+                    emitter.pop();
+                    emitter.push_line(format!("br label %L{}", done_label));
+                }
+                emitter.push_line(format!("L{}:", done_label));
             }
             Stmt::Return(expr) => match expr {
                 Some(expr) => {
@@ -195,6 +211,11 @@ impl Codegen<i32> for mir::Expr {
     fn generate(&self, emitter: &mut Emitter) -> i32 {
         use mir::Expr;
         match self {
+            Expr::Call(func, args, ty) => {
+                let result = emitter.next_int();
+                emitter.push_line(format!("call i32 @{}()", func));
+                result
+            },
             Expr::Literal(lit, ty) => lit.generate(emitter),
             Expr::Name(name, ty) => match emitter.lookup_name(name) {
                 Some(val) => val,

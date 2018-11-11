@@ -4,6 +4,15 @@ pub enum Type {
     Int,
 }
 
+impl Type {
+    pub fn ir_repr(&self) -> impl AsRef<str> {
+        match self {
+            Type::T(_) => panic!("Should not encounter untyped variables in a typed tree."),
+            Type::Int => "u32",
+        }
+    }
+}
+
 pub trait Typed {
     fn get_type(&self) -> Type;
 }

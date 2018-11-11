@@ -8,7 +8,8 @@ grammar;
 pub Program: ast::Program = <decls:TopDecl+> => ast::Program(decls);
 
 TopDecl: ast::TopDecl = {
-    "fn" <name:r"[A-Za-z_][A-Za-z0-9_]*"> "(" ")" "->" <ty:Type> ":" <stmts:Body> "end" => ast::TopDecl::Fn(name.to_owned(), ty, stmts),
+    "extern" <name:r"[A-Za-z_][A-Za-z0-9_]*"> ":" <ty:Type> => ast::TopDecl::Extern(name.to_owned(), ty),
+    "fn" <name:r"[A-Za-z_][A-Za-z0-9_]*"> "(" ")" ":" <ty:Type> "=" <stmts:Body> "end" => ast::TopDecl::Fn(name.to_owned(), ty, stmts),
 };
 
 Type: Type = {
@@ -29,7 +30,7 @@ Body: Vec<ast::Stmt> = {
 Stmt: ast::Stmt = {
     <name:r"[A-Za-z_][A-Za-z0-9_]*"> "=" <expr:Expr> => ast::Stmt::Assign(name.to_owned(), expr),
     <expr:Expr> => ast::Stmt::Expr(expr),
-    "if" <cond:Expr> ":" <body1:Body> "end" => ast::Stmt::If(cond, body1),
+    "if" <cond:Expr> ":" <body1:Body> <body2:("else" ":" Body)?> "end" => ast::Stmt::If(cond, body1, body2.map(|(_, _, body)| body)),
     "return" <expr:Expr?> => ast::Stmt::Return(expr),
 };
 
@@ -40,6 +41,7 @@ Expr: ast::Expr = {
 };
 
 Term: ast::Expr = {
+    <name:r"[A-Za-z_][A-Za-z0-9_]*"> "(" ")" => ast::Expr::Call(name.to_owned(), Vec::new()),
     <literal:Literal> => ast::Expr::Literal(literal),
     <name:r"[A-Za-z_][A-Za-z0-9_]*"> => ast::Expr::Name(name.to_owned()),
 };

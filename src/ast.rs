@@ -17,12 +17,14 @@ impl IntoMir<mir::Program> for Program {
 
 #[derive(Debug)]
 pub enum TopDecl {
+    Extern(String, Type),
     Fn(String, Type, Vec<Stmt>),
 }
 
 impl IntoMir<mir::TopDecl> for TopDecl {
     fn into_mir(self, ctx: &mut Context) -> mir::TopDecl {
         match self {
+            TopDecl::Extern(name, ty) => mir::TopDecl::Extern(name, ty),
             TopDecl::Fn(name, ty, body) => mir::TopDecl::Fn(
                 name,
                 ty,
@@ -38,7 +40,7 @@ impl IntoMir<mir::TopDecl> for TopDecl {
 pub enum Stmt {
     Assign(String, Expr),
     Expr(Expr),
-    If(Expr, Vec<Stmt>),
+    If(Expr, Vec<Stmt>, Option<Vec<Stmt>>),
     Return(Option<Expr>),
 }
 
@@ -47,11 +49,17 @@ impl IntoMir<mir::Stmt> for Stmt {
         match self {
             Stmt::Assign(name, expr) => mir::Stmt::Assign(name, expr.into_mir(ctx)),
             Stmt::Expr(expr) => mir::Stmt::Expr(expr.into_mir(ctx)),
-            Stmt::If(cond, body) => mir::Stmt::If(
+            Stmt::If(cond, body1, body2) => mir::Stmt::If(
                 cond.into_mir(ctx),
-                body.into_iter()
+                body1
+                    .into_iter()
                     .map(|stmt| stmt.into_mir(ctx))
                     .collect::<Vec<_>>(),
+                body2.map(|body| {
+                    body.into_iter()
+                        .map(|stmt| stmt.into_mir(ctx))
+                        .collect::<Vec<_>>()
+                }),
             ),
             Stmt::Return(expr) => mir::Stmt::Return(expr.map(|expr| expr.into_mir(ctx))),
         }
@@ -60,6 +68,7 @@ impl IntoMir<mir::Stmt> for Stmt {
 
 #[derive(Debug)]
 pub enum Expr {
+    Call(String, Vec<Expr>),
     Literal(Literal),
     Name(String),
     Plus(Box<Expr>, Box<Expr>),
@@ -69,6 +78,13 @@ pub enum Expr {
 impl IntoMir<mir::Expr> for Expr {
     fn into_mir(self, ctx: &mut Context) -> mir::Expr {
         match self {
+            Expr::Call(func, args) => {
+                let args = args
+                    .into_iter()
+                    .map(|expr| expr.into_mir(ctx))
+                    .collect::<Vec<_>>();
+                mir::Expr::Call(func, args, ctx.next())
+            }
             Expr::Literal(lit) => {
                 let ty = lit.get_type();
                 mir::Expr::Literal(lit.into(), ty)
