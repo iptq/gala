@@ -177,12 +177,13 @@ impl Codegen for mir::Stmt {
                 expr.generate(emitter);
             }
             Stmt::If(cond, body1, body2) => {
+                let cond_ty = cond.get_type().ir_repr().as_ref().to_owned();
                 let cond = cond.generate(emitter);
                 let cmp = emitter.next_int();
                 let succ_label = letter_of_number(emitter.next_int());
                 let fail_label = letter_of_number(emitter.next_int());
                 let done_label = letter_of_number(emitter.next_int());
-                emitter.push_line(format!("%i{} = icmp ne i32 %i{}, 0", cmp, cond));
+                emitter.push_line(format!("%i{} = icmp ne {} %i{}, 0", cmp, cond_ty, cond));
                 emitter.push_line(format!(
                     "br i1 %i{}, label %L{}, label %L{}",
                     cmp,
@@ -244,7 +245,10 @@ impl Codegen<i32> for mir::Expr {
                 Some(val) => val,
                 None => panic!("Could not find name '{}'", name),
             },
-            Expr::Plus(left, right, _ty) | Expr::Minus(left, right, _ty) => {
+            Expr::Equals(left, right, _ty)
+            | Expr::Plus(left, right, _ty)
+            | Expr::Minus(left, right, _ty)
+            | Expr::Times(left, right, _ty) => {
                 let left = left.generate(emitter);
                 let right = right.generate(emitter);
                 let result = emitter.next_int();
@@ -252,8 +256,10 @@ impl Codegen<i32> for mir::Expr {
                     "%i{} = {} i32 %i{}, %i{}",
                     result,
                     match self {
+                        Expr::Equals(_, _, _) => "icmp eq",
                         Expr::Plus(_, _, _) => "add",
                         Expr::Minus(_, _, _) => "sub",
+                        Expr::Times(_, _, _) => "mul",
                         _ => unreachable!(),
                     },
                     left,

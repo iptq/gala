@@ -34,13 +34,27 @@ Stmt: ast::Stmt = {
     "return" <expr:Expr?> => ast::Stmt::Return(expr),
 };
 
-Expr: ast::Expr = {
-    <left:Expr> "+" <right:Term> => ast::Expr::Plus(Box::new(left), Box::new(right)),
-    <left:Expr> "-" <right:Term> => ast::Expr::Minus(Box::new(left), Box::new(right)),
-    <right:Term> => right,
+Expr: ast::Expr = CompExpr;
+
+CompExpr: ast::Expr = {
+    <left:CompExpr> "==" <right:ArithExpr> => ast::Expr::Equals(Box::new(left), Box::new(right)),
+    <expr:ArithExpr> => expr,
 };
 
-Term: ast::Expr = {
+ArithExpr: ast::Expr = {
+    <left:ArithExpr> "+" <right:FactorExpr> => ast::Expr::Plus(Box::new(left), Box::new(right)),
+    <left:ArithExpr> "-" <right:FactorExpr> => ast::Expr::Minus(Box::new(left), Box::new(right)),
+    <expr:FactorExpr> => expr,
+};
+
+FactorExpr: ast::Expr = {
+    <left:FactorExpr> "*" <right:Term> => ast::Expr::Times(Box::new(left), Box::new(right)),
+    <expr:Term> => expr,
+};
+
+Term: ast::Expr = ExprBottom;
+
+ExprBottom: ast::Expr = {
     <name:r"[A-Za-z_][A-Za-z0-9_]*"> "(" <args:Comma<Expr>> ")" => ast::Expr::Call(name.to_owned(), args),
     <literal:Literal> => ast::Expr::Literal(literal),
     <name:r"[A-Za-z_][A-Za-z0-9_]*"> => ast::Expr::Name(name.to_owned()),

@@ -1,13 +1,16 @@
 extern puts: int
 extern printf: int
 
-fn fib(n: int): int =
-    if 1:
-        w = 3;
+fn factorial_helper(x: int, y: int): int =
+    if x == 0:
+        return y;
     else:
-        w = 4;
-    end;
-    return 107;
+        return factorial_helper(x - 1, y * x);
+    end
+end
+
+fn factorial(n: int): int =
+    return factorial_helper(n, 1);
 end
 
 fn main(): int =
@@ -18,5 +21,5 @@ fn main(): int =
         u = 3;
     end;
     puts("Hello, world!");
-    return fib(1);
+    return factorial(4);
 end

@@ -72,8 +72,10 @@ pub enum Expr {
     Call(String, Vec<Expr>),
     Literal(Literal),
     Name(String),
+    Equals(Box<Expr>, Box<Expr>),
     Plus(Box<Expr>, Box<Expr>),
     Minus(Box<Expr>, Box<Expr>),
+    Times(Box<Expr>, Box<Expr>),
 }
 
 impl IntoMir<mir::Expr> for Expr {
@@ -91,6 +93,11 @@ impl IntoMir<mir::Expr> for Expr {
                 mir::Expr::Literal(lit.into(), ty)
             }
             Expr::Name(name) => mir::Expr::Name(name, ctx.next()),
+            Expr::Equals(left, right) => {
+                let left = Box::new((*left).into_mir(ctx));
+                let right = Box::new((*right).into_mir(ctx));
+                mir::Expr::Equals(left, right, Type::Bool)
+            }
             Expr::Plus(left, right) => {
                 let left = Box::new((*left).into_mir(ctx));
                 let right = Box::new((*right).into_mir(ctx));
@@ -100,6 +107,11 @@ impl IntoMir<mir::Expr> for Expr {
                 let left = Box::new((*left).into_mir(ctx));
                 let right = Box::new((*right).into_mir(ctx));
                 mir::Expr::Minus(left, right, ctx.next())
+            }
+            Expr::Times(left, right) => {
+                let left = Box::new((*left).into_mir(ctx));
+                let right = Box::new((*right).into_mir(ctx));
+                mir::Expr::Times(left, right, ctx.next())
             }
         }
     }

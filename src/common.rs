@@ -1,6 +1,7 @@
 #[derive(Clone, Debug)]
 pub enum Type {
     T(u32),
+    Bool,
     Int,
     String,
 }
@@ -8,7 +9,8 @@ pub enum Type {
 impl Type {
     pub fn ir_repr(&self) -> impl AsRef<str> {
         match self {
-            Type::T(_) => panic!("Should not encounter untyped variables in a typed tree."),
+            Type::T(_) => "i32", // panic!("Should not encounter untyped variables in a typed tree."),
+            Type::Bool => "i1",
             Type::Int => "i32",
             Type::String => "i8*", // lol
         }

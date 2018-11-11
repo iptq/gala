@@ -41,8 +41,10 @@ pub enum Expr {
     Call(String, Vec<Expr>, Type),
     Literal(Literal, Type),
     Name(String, Type),
+    Equals(Box<Expr>, Box<Expr>, Type),
     Plus(Box<Expr>, Box<Expr>, Type),
     Minus(Box<Expr>, Box<Expr>, Type),
+    Times(Box<Expr>, Box<Expr>, Type),
 }
 
 impl Typed for Expr {
@@ -51,8 +53,10 @@ impl Typed for Expr {
             Expr::Call(_, _, t)
             | Expr::Literal(_, t)
             | Expr::Name(_, t)
+            | Expr::Equals(_, _, t)
             | Expr::Plus(_, _, t)
-            | Expr::Minus(_, _, t) => t.clone(),
+            | Expr::Minus(_, _, t)
+            | Expr::Times(_, _, t) => t.clone(),
         }
     }
 }
