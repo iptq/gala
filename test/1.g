@@ -1,3 +1,4 @@
+extern puts: int
 extern printf: int
 
 fn fib(): int =
@@ -16,4 +17,5 @@ fn main(): int =
         u = 3;
     end;
     fib();
+    puts("Hello, world!");
 end

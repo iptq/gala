@@ -1,4 +1,4 @@
-use common::{Literal, Type};
+use common::{Literal, Type, Typed};
 
 pub struct Context {
     inc: u32,
@@ -43,4 +43,16 @@ pub enum Expr {
     Name(String, Type),
     Plus(Box<Expr>, Box<Expr>, Type),
     Minus(Box<Expr>, Box<Expr>, Type),
+}
+
+impl Typed for Expr {
+    fn get_type(&self) -> Type {
+        match self {
+            Expr::Call(_, _, t)
+            | Expr::Literal(_, t)
+            | Expr::Name(_, t)
+            | Expr::Plus(_, _, t)
+            | Expr::Minus(_, _, t) => t.clone(),
+        }
+    }
 }

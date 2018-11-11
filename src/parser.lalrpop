@@ -41,11 +41,23 @@ Expr: ast::Expr = {
 };
 
 Term: ast::Expr = {
-    <name:r"[A-Za-z_][A-Za-z0-9_]*"> "(" ")" => ast::Expr::Call(name.to_owned(), Vec::new()),
+    <name:r"[A-Za-z_][A-Za-z0-9_]*"> "(" <args:Comma<Expr>> ")" => ast::Expr::Call(name.to_owned(), args),
     <literal:Literal> => ast::Expr::Literal(literal),
     <name:r"[A-Za-z_][A-Za-z0-9_]*"> => ast::Expr::Name(name.to_owned()),
 };
 
 Literal: Literal = {
     <int:r"[0-9]+"> => Literal::Int(u32::from_str(int).unwrap()),
+    <string:r#""[^"]*""#> => Literal::String(string[1..string.len() - 1].to_owned()),
+};
+
+Comma<T>: Vec<T> = {
+    <f:T?> <v:("," <T>)*> ","? => match f {
+        None => v,
+        Some(s) => {
+            let mut v = v;
+            v.insert(0, s);
+            v
+        },
+    }
 };

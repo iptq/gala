@@ -1,7 +1,8 @@
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Type {
     T(u32),
     Int,
+    String,
 }
 
 impl Type {
@@ -9,6 +10,7 @@ impl Type {
         match self {
             Type::T(_) => panic!("Should not encounter untyped variables in a typed tree."),
             Type::Int => "u32",
+            Type::String => "i8*", // lol
         }
     }
 }
@@ -20,12 +22,14 @@ pub trait Typed {
 #[derive(Debug)]
 pub enum Literal {
     Int(u32),
+    String(String),
 }
 
 impl Typed for Literal {
     fn get_type(&self) -> Type {
         match self {
             Literal::Int(_) => Type::Int,
+            Literal::String(_) => Type::String,
         }
     }
 }

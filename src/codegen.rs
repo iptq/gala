@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use common;
+use common::{self, Typed};
 use mir;
 
 fn letter_of_number(n: i32) -> String {
@@ -43,6 +43,9 @@ pub struct Scope {
 impl Scope {
     pub fn push_subscope(&mut self, scope: Scope) {
         self.items.push(Item::Inner(Box::new(scope)));
+    }
+    pub fn prepend_line(&mut self, line: impl AsRef<str>) {
+        self.items.insert(0, Item::Line(line.as_ref().to_owned()));
     }
     pub fn push_line(&mut self, line: impl AsRef<str>) {
         self.items.push(Item::Line(line.as_ref().to_owned()));
@@ -103,6 +106,11 @@ impl Emitter {
         }
         None
     }
+    pub fn push_global_line(&mut self, line: impl AsRef<str>) {
+        self.scope_stack
+            .first_mut()
+            .map(|scope| scope.prepend_line(line));
+    }
     pub fn push_line(&mut self, line: impl AsRef<str>) {
         self.scope_stack
             .last_mut()
@@ -129,10 +137,10 @@ impl Codegen for mir::TopDecl {
     fn generate(&self, emitter: &mut Emitter) {
         use mir::TopDecl;
         match self {
-            TopDecl::Extern(name, ty) => {
+            TopDecl::Extern(name, _ty) => {
                 emitter.push_line(format!("declare i32 @{}(i8* nocapture) nounwind", name));
             }
-            TopDecl::Fn(name, ty, stmts) => {
+            TopDecl::Fn(name, _ty, stmts) => {
                 emitter.push_line(format!("define i32 @{}() {{", name));
                 emitter.push_line("entry:");
                 emitter.scope();
@@ -211,17 +219,24 @@ impl Codegen<i32> for mir::Expr {
     fn generate(&self, emitter: &mut Emitter) -> i32 {
         use mir::Expr;
         match self {
-            Expr::Call(func, args, ty) => {
+            Expr::Call(func, args, _ty) => {
                 let result = emitter.next_int();
-                emitter.push_line(format!("call i32 @{}()", func));
+                let args = args
+                    .iter()
+                    .map(|expr| {
+                        let ename = expr.generate(emitter);
+                        format!("{} %i{}", expr.get_type().ir_repr().as_ref(), ename)
+                    }).collect::<Vec<_>>()
+                    .join(", ");
+                emitter.push_line(format!("call i32 @{}({})", func, args));
                 result
-            },
-            Expr::Literal(lit, ty) => lit.generate(emitter),
-            Expr::Name(name, ty) => match emitter.lookup_name(name) {
+            }
+            Expr::Literal(lit, _ty) => lit.generate(emitter),
+            Expr::Name(name, _ty) => match emitter.lookup_name(name) {
                 Some(val) => val,
                 None => panic!("Could not find name '{}'", name),
             },
-            Expr::Plus(left, right, ty) | Expr::Minus(left, right, ty) => {
+            Expr::Plus(left, right, _ty) | Expr::Minus(left, right, _ty) => {
                 let left = left.generate(emitter);
                 let right = right.generate(emitter);
                 let result = emitter.next_int();
@@ -250,6 +265,31 @@ impl Codegen<i32> for common::Literal {
                 let result = emitter.next_int();
                 // wtf?
                 emitter.push_line(format!("%i{} = add i32 {}, 0", result, n));
+                result
+            }
+            Literal::String(s) => {
+                let litname = emitter.next_int();
+                let tmp = emitter.next_int();
+                let result = emitter.next_int();
+                emitter.push_global_line(format!(
+                    "@ss{} = private unnamed_addr constant [{} x i8] c\"{}\"",
+                    litname,
+                    s.len(),
+                    s
+                ));
+                emitter.push_line(format!(
+                    "%i{} = getelementptr [{} x i8], [{} x i8]* @ss{}",
+                    tmp,
+                    s.len(),
+                    s.len(),
+                    litname
+                ));
+                emitter.push_line(format!(
+                    "%i{} = bitcast [{} x i8]* %i{} to i8*",
+                    result,
+                    s.len(),
+                    tmp
+                ));
                 result
             }
         }
