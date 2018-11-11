@@ -8,6 +8,7 @@ mod ast;
 mod codegen;
 mod common;
 mod mir;
+mod typeck;
 
 use std::fs::File;
 use std::io::{stdin, Read, Stdin};
@@ -18,6 +19,7 @@ use structopt::StructOpt;
 
 use codegen::{Codegen, Emitter};
 use mir::IntoMir;
+use typeck::Typechecker;
 
 enum Input {
     File(File),
@@ -60,6 +62,8 @@ fn main() -> Result<(), Error> {
 
     let mut context = mir::Context::new();
     let mir = ast.into_mir(&mut context);
+
+    let constraints = mir.generate_constraints();
 
     let mut emitter = Emitter::new();
     mir.generate(&mut emitter);

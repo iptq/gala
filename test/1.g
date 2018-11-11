@@ -1,5 +1,4 @@
 extern puts: int
-extern printf: int
 
 fn factorial_helper(x: int, y: int): int =
     if x == 0:
@@ -14,12 +13,6 @@ fn factorial(n: int): int =
 end
 
 fn main(): int =
-    x = 1;
-    y = x + 2;
-    z = x + y + 3;
-    if x:
-        u = 3;
-    end;
     puts("Hello, world!");
     return factorial(4);
 end
