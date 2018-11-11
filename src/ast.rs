@@ -1,4 +1,4 @@
-use common::{Literal, Type, Typed};
+use common::{Arg, Literal, Type, Typed};
 use mir::{self, Context, IntoMir};
 
 #[derive(Debug)]
@@ -18,15 +18,16 @@ impl IntoMir<mir::Program> for Program {
 #[derive(Debug)]
 pub enum TopDecl {
     Extern(String, Type),
-    Fn(String, Type, Vec<Stmt>),
+    Fn(String, Vec<Arg>, Type, Vec<Stmt>),
 }
 
 impl IntoMir<mir::TopDecl> for TopDecl {
     fn into_mir(self, ctx: &mut Context) -> mir::TopDecl {
         match self {
             TopDecl::Extern(name, ty) => mir::TopDecl::Extern(name, ty),
-            TopDecl::Fn(name, ty, body) => mir::TopDecl::Fn(
+            TopDecl::Fn(name, args, ty, body) => mir::TopDecl::Fn(
                 name,
+                args,
                 ty,
                 body.into_iter()
                     .map(|stmt| stmt.into_mir(ctx))

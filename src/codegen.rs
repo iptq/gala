@@ -140,8 +140,16 @@ impl Codegen for mir::TopDecl {
             TopDecl::Extern(name, _ty) => {
                 emitter.push_line(format!("declare i32 @{}(i8* nocapture) nounwind", name));
             }
-            TopDecl::Fn(name, _ty, stmts) => {
-                emitter.push_line(format!("define i32 @{}() {{", name));
+            TopDecl::Fn(name, args, _ty, stmts) => {
+                let args = args
+                    .iter()
+                    .map(|arg| {
+                        let argn = emitter.next_int();
+                        emitter.new_variable(&arg.0, argn);
+                        format!("{} %i{}", arg.1.ir_repr().as_ref(), argn)
+                    }).collect::<Vec<_>>()
+                    .join(", ");
+                emitter.push_line(format!("define i32 @{} ({}) {{", name, args));
                 emitter.push_line("entry:");
                 emitter.scope();
                 for stmt in stmts {
@@ -228,7 +236,7 @@ impl Codegen<i32> for mir::Expr {
                         format!("{} %i{}", expr.get_type().ir_repr().as_ref(), ename)
                     }).collect::<Vec<_>>()
                     .join(", ");
-                emitter.push_line(format!("call i32 @{}({})", func, args));
+                emitter.push_line(format!("%i{} = call i32 @{}({})", result, func, args));
                 result
             }
             Expr::Literal(lit, _ty) => lit.generate(emitter),

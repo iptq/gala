@@ -1,4 +1,4 @@
-use common::{Literal, Type, Typed};
+use common::{Arg, Literal, Type, Typed};
 
 pub struct Context {
     inc: u32,
@@ -25,7 +25,7 @@ pub struct Program(pub Vec<TopDecl>);
 #[derive(Debug)]
 pub enum TopDecl {
     Extern(String, Type),
-    Fn(String, Type, Vec<Stmt>),
+    Fn(String, Vec<Arg>, Type, Vec<Stmt>),
 }
 
 #[derive(Debug)]

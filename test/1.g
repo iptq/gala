@@ -1,12 +1,13 @@
 extern puts: int
 extern printf: int
 
-fn fib(): int =
+fn fib(n: int): int =
     if 1:
         w = 3;
     else:
         w = 4;
-    end
+    end;
+    return 107;
 end
 
 fn main(): int =
@@ -16,6 +17,6 @@ fn main(): int =
     if x:
         u = 3;
     end;
-    fib();
     puts("Hello, world!");
+    return fib(1);
 end

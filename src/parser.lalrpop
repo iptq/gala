@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use ast;
-use common::{Literal, Type};
+use common::{Literal, Arg, Type};
 
 grammar;
 
@@ -9,7 +9,7 @@ pub Program: ast::Program = <decls:TopDecl+> => ast::Program(decls);
 
 TopDecl: ast::TopDecl = {
     "extern" <name:r"[A-Za-z_][A-Za-z0-9_]*"> ":" <ty:Type> => ast::TopDecl::Extern(name.to_owned(), ty),
-    "fn" <name:r"[A-Za-z_][A-Za-z0-9_]*"> "(" ")" ":" <ty:Type> "=" <stmts:Body> "end" => ast::TopDecl::Fn(name.to_owned(), ty, stmts),
+    "fn" <name:r"[A-Za-z_][A-Za-z0-9_]*"> "(" <args:Comma<Arg>> ")" ":" <ty:Type> "=" <stmts:Body> "end" => ast::TopDecl::Fn(name.to_owned(), args, ty, stmts),
 };
 
 Type: Type = {
@@ -49,6 +49,10 @@ Term: ast::Expr = {
 Literal: Literal = {
     <int:r"[0-9]+"> => Literal::Int(u32::from_str(int).unwrap()),
     <string:r#""[^"]*""#> => Literal::String(string[1..string.len() - 1].to_owned()),
+};
+
+Arg: Arg = {
+    <name:r"[A-Za-z_][A-Za-z0-9_]*"> ":" <ty:Type> => Arg(name.to_owned(), ty),
 };
 
 Comma<T>: Vec<T> = {
