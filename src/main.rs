@@ -6,6 +6,8 @@ extern crate structopt;
 
 mod ast;
 mod codegen;
+mod common;
+mod mir;
 
 use std::fs::File;
 use std::io::{stdin, Read, Stdin};
@@ -15,6 +17,7 @@ use failure::Error;
 use structopt::StructOpt;
 
 use codegen::{Codegen, Emitter};
+use mir::IntoMir;
 
 enum Input {
     File(File),
@@ -51,12 +54,15 @@ fn main() -> Result<(), Error> {
     let contents = String::from_utf8(buf)?;
 
     let parser = parser::ProgramParser::new();
-    let program = parser
+    let ast = parser
         .parse(&contents)
         .map_err(|err| format_err!("{}", err))?;
 
+    let mut context = mir::Context::new();
+    let mir = ast.into_mir(&mut context);
+
     let mut emitter = Emitter::new();
-    program.generate(&mut emitter);
+    mir.generate(&mut emitter);
 
     println!("{}", emitter.as_string());
     Ok(())

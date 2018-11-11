@@ -1,17 +1,37 @@
+use common::{Literal, Type, Typed};
+use mir::{self, Context, IntoMir};
+
 #[derive(Debug)]
 pub struct Program(pub Vec<TopDecl>);
 
-#[derive(Debug)]
-pub enum TopDecl {
-    Fn(String, Vec<Stmt>),
+impl IntoMir<mir::Program> for Program {
+    fn into_mir(self, ctx: &mut Context) -> mir::Program {
+        mir::Program(
+            self.0
+                .into_iter()
+                .map(|decl| decl.into_mir(ctx))
+                .collect::<Vec<_>>(),
+        )
+    }
 }
 
 #[derive(Debug)]
-pub enum Expr {
-    Literal(Literal),
-    Name(String),
-    Plus(Box<Expr>, Box<Expr>),
-    Minus(Box<Expr>, Box<Expr>),
+pub enum TopDecl {
+    Fn(String, Type, Vec<Stmt>),
+}
+
+impl IntoMir<mir::TopDecl> for TopDecl {
+    fn into_mir(self, ctx: &mut Context) -> mir::TopDecl {
+        match self {
+            TopDecl::Fn(name, ty, body) => mir::TopDecl::Fn(
+                name,
+                ty,
+                body.into_iter()
+                    .map(|stmt| stmt.into_mir(ctx))
+                    .collect::<Vec<_>>(),
+            ),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -22,12 +42,48 @@ pub enum Stmt {
     Return(Option<Expr>),
 }
 
-#[derive(Debug)]
-pub enum Literal {
-    Int(u32),
+impl IntoMir<mir::Stmt> for Stmt {
+    fn into_mir(self, ctx: &mut Context) -> mir::Stmt {
+        match self {
+            Stmt::Assign(name, expr) => mir::Stmt::Assign(name, expr.into_mir(ctx)),
+            Stmt::Expr(expr) => mir::Stmt::Expr(expr.into_mir(ctx)),
+            Stmt::If(cond, body) => mir::Stmt::If(
+                cond.into_mir(ctx),
+                body.into_iter()
+                    .map(|stmt| stmt.into_mir(ctx))
+                    .collect::<Vec<_>>(),
+            ),
+            Stmt::Return(expr) => mir::Stmt::Return(expr.map(|expr| expr.into_mir(ctx))),
+        }
+    }
 }
 
 #[derive(Debug)]
-pub enum Type {
+pub enum Expr {
+    Literal(Literal),
+    Name(String),
+    Plus(Box<Expr>, Box<Expr>),
+    Minus(Box<Expr>, Box<Expr>),
+}
 
+impl IntoMir<mir::Expr> for Expr {
+    fn into_mir(self, ctx: &mut Context) -> mir::Expr {
+        match self {
+            Expr::Literal(lit) => {
+                let ty = lit.get_type();
+                mir::Expr::Literal(lit.into(), ty)
+            }
+            Expr::Name(name) => mir::Expr::Name(name, ctx.next()),
+            Expr::Plus(left, right) => {
+                let left = Box::new((*left).into_mir(ctx));
+                let right = Box::new((*right).into_mir(ctx));
+                mir::Expr::Plus(left, right, ctx.next())
+            }
+            Expr::Minus(left, right) => {
+                let left = Box::new((*left).into_mir(ctx));
+                let right = Box::new((*right).into_mir(ctx));
+                mir::Expr::Minus(left, right, ctx.next())
+            }
+        }
+    }
 }

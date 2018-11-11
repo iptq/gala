@@ -1,5 +1,7 @@
-use ast;
 use std::collections::BTreeMap;
+
+use common;
+use mir;
 
 fn letter_of_number(n: i32) -> String {
     let mut result = String::new();
@@ -39,6 +41,9 @@ pub struct Scope {
 }
 
 impl Scope {
+    pub fn push_subscope(&mut self, scope: Scope) {
+        self.items.push(Item::Inner(Box::new(scope)));
+    }
     pub fn push_line(&mut self, line: impl AsRef<str>) {
         self.items.push(Item::Line(line.as_ref().to_owned()));
     }
@@ -48,16 +53,12 @@ impl Scope {
     pub fn lookup_name(&self, name: impl AsRef<str>) -> Option<i32> {
         self.names.get(name.as_ref()).map(|v| v.clone())
     }
-    pub fn lines(self) -> Vec<Item> {
-        self.items
-    }
     pub fn as_string(&self) -> String {
-        let mut s = String::new();
-        for item in self.items.iter() {
-            s += &item.as_string();
-            s += "\n";
-        }
-        s
+        self.items
+            .iter()
+            .map(|item| item.as_string())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 }
 
@@ -79,7 +80,9 @@ impl Emitter {
     }
     pub fn pop(&mut self) {
         if let Some(scope) = self.scope_stack.pop() {
-            self.push_lines(scope.lines());
+            self.scope_stack
+                .last_mut()
+                .map(|scope2| scope2.push_subscope(scope));
         }
     }
     pub fn next_int(&mut self) -> i32 {
@@ -100,11 +103,6 @@ impl Emitter {
         }
         None
     }
-    pub fn push_lines(&mut self, lines: Vec<impl Into<String>>) {
-        for line in lines {
-            self.push_line(line.into());
-        }
-    }
     pub fn push_line(&mut self, line: impl AsRef<str>) {
         self.scope_stack
             .last_mut()
@@ -119,7 +117,7 @@ pub trait Codegen<T = ()> {
     fn generate(&self, &mut Emitter) -> T;
 }
 
-impl Codegen for ast::Program {
+impl Codegen for mir::Program {
     fn generate(&self, emitter: &mut Emitter) {
         for decl in self.0.iter() {
             decl.generate(emitter);
@@ -127,11 +125,11 @@ impl Codegen for ast::Program {
     }
 }
 
-impl Codegen for ast::TopDecl {
+impl Codegen for mir::TopDecl {
     fn generate(&self, emitter: &mut Emitter) {
-        use ast::TopDecl;
+        use mir::TopDecl;
         match self {
-            TopDecl::Fn(name, stmts) => {
+            TopDecl::Fn(name, ty, stmts) => {
                 emitter.push_line(format!("define i32 @{}() {{", name));
                 emitter.push_line("entry:");
                 emitter.scope();
@@ -146,9 +144,9 @@ impl Codegen for ast::TopDecl {
     }
 }
 
-impl Codegen for ast::Stmt {
+impl Codegen for mir::Stmt {
     fn generate(&self, emitter: &mut Emitter) {
-        use ast::Stmt;
+        use mir::Stmt;
         match self {
             Stmt::Assign(name, expr) => {
                 let assigned = expr.generate(emitter);
@@ -180,31 +178,29 @@ impl Codegen for ast::Stmt {
                 emitter.push_line(format!("br label %L{}", letter_of_number(done_label)));
                 emitter.push_line(format!("L{}:", letter_of_number(done_label)));
             }
-            Stmt::Return(expr) => {
-                match expr {
-                    Some(expr) => {
-                        let expr = expr.generate(emitter);
-                        emitter.push_line(format!("ret i32 %i{}", expr));
-                    },
-                    None => {
-                        emitter.push_line(format!("ret void"));
-                    }
+            Stmt::Return(expr) => match expr {
+                Some(expr) => {
+                    let expr = expr.generate(emitter);
+                    emitter.push_line(format!("ret i32 %i{}", expr));
                 }
-            }
+                None => {
+                    emitter.push_line(format!("ret void"));
+                }
+            },
         }
     }
 }
 
-impl Codegen<i32> for ast::Expr {
+impl Codegen<i32> for mir::Expr {
     fn generate(&self, emitter: &mut Emitter) -> i32 {
-        use ast::Expr;
+        use mir::Expr;
         match self {
-            Expr::Literal(lit) => lit.generate(emitter),
-            Expr::Name(name) => match emitter.lookup_name(name) {
+            Expr::Literal(lit, ty) => lit.generate(emitter),
+            Expr::Name(name, ty) => match emitter.lookup_name(name) {
                 Some(val) => val,
                 None => panic!("Could not find name '{}'", name),
             },
-            Expr::Plus(left, right) | Expr::Minus(left, right) => {
+            Expr::Plus(left, right, ty) | Expr::Minus(left, right, ty) => {
                 let left = left.generate(emitter);
                 let right = right.generate(emitter);
                 let result = emitter.next_int();
@@ -212,12 +208,12 @@ impl Codegen<i32> for ast::Expr {
                     "%i{} = {} i32 %i{}, %i{}",
                     result,
                     match self {
-                        Expr::Plus(_, _) => "add",
-                        Expr::Minus(_, _) => "sub",
+                        Expr::Plus(_, _, _) => "add",
+                        Expr::Minus(_, _, _) => "sub",
                         _ => unreachable!(),
                     },
                     left,
-                    right
+                    right,
                 ));
                 result
             }
@@ -225,9 +221,9 @@ impl Codegen<i32> for ast::Expr {
     }
 }
 
-impl Codegen<i32> for ast::Literal {
+impl Codegen<i32> for common::Literal {
     fn generate(&self, emitter: &mut Emitter) -> i32 {
-        use ast::Literal;
+        use common::Literal;
         match self {
             Literal::Int(n) => {
                 let result = emitter.next_int();
