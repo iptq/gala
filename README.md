@@ -20,7 +20,7 @@ Checklist
   - [x] Assignment
 - [ ] Control Flow
   - [x] If/Else
-  - [ ] While Loops
+  - [x] While Loops
     - [ ] For Loops
 - [ ] Structs
   - [ ] Unions/Enums
