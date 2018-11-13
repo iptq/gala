@@ -10,6 +10,7 @@ extern crate structopt;
 mod ast;
 mod codegen;
 mod common;
+mod lexer;
 mod mir;
 mod typeck;
 
@@ -58,6 +59,7 @@ fn main() -> Result<(), Error> {
     reader.read_to_end(&mut buf)?;
     let contents = String::from_utf8(buf)?;
 
+    let lexer = lexer::Lexer::new(&contents);
     let parser = parser::ProgramParser::new();
     let ast = parser
         .parse(&contents)

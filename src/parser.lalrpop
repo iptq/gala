@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use ast;
 use common::{Field, Literal, Arg, Type};
+use lexer::Tok;
 
 grammar;
 
@@ -9,8 +10,8 @@ pub Program: ast::Program = <decls:TopDecl+> => ast::Program(decls);
 
 TopDecl: ast::TopDecl = {
     "extern" <name:Name> ":" <ty:Type> => ast::TopDecl::Extern(name, ty),
-    "fn" <name:Name> "(" <args:Comma<Arg>> ")" ":" <ty:Type> "=" <stmts:Body<Stmt>> "end" => ast::TopDecl::Fn(name, args, ty, stmts),
-    "struct" <name:Name> ":" <fields:Body<Field>> "end" => ast::TopDecl::Struct(name, fields),
+    "fn" <name:Name> "(" <args:Comma<Arg>> ")" ":" <ty:Type> "=" "{{" <stmts:Body<Stmt>> "}}" => ast::TopDecl::Fn(name, args, ty, stmts),
+    "struct" <name:Name> ":" "{{" <fields:Body<Field>> "}}" => ast::TopDecl::Struct(name, fields),
 };
 
 Field: Field = <name:Name> ":" <ty:Type> => Field(name, ty);
@@ -22,7 +23,7 @@ Type: Type = {
 };
 
 Body<T>: Vec<T> = {
-    <f:T?> <stmts:(";" <T>)*> ";"? => match f {
+    <f:T?> <stmts:("sep" <T>)*> "sep"? => match f {
         None => stmts,
         Some(s) => {
             let mut stmts = stmts;
@@ -35,8 +36,8 @@ Body<T>: Vec<T> = {
 Stmt: ast::Stmt = {
     <re:"let"?> <name:Name> "=" <expr:Expr> => ast::Stmt::Assign(match re { Some(_) => false, None => true }, name, expr),
     <expr:Expr> => ast::Stmt::Expr(expr),
-    "if" <cond:Expr> ":" <body1:Body<Stmt>> <body2:("else" ":" Body<Stmt>)?> "end" => ast::Stmt::If(cond, body1, body2.map(|(_, _, body)| body)),
-    "while" <cond:Expr> ":" <body:Body<Stmt>> "end" => ast::Stmt::While(cond, body),
+    "if" <cond:Expr> ":" "{{" <body1:Body<Stmt>> "}}" <body2:("else" ":" "{{" Body<Stmt> "}}")?> => ast::Stmt::If(cond, body1, body2.map(|(_, _, body)| body)),
+    "while" <cond:Expr> ":" "{{" <body:Body<Stmt>> "}}" => ast::Stmt::While(cond, body),
     "return" <expr:Expr?> => ast::Stmt::Return(expr),
 };
 
@@ -73,8 +74,8 @@ ExprBottom: ast::Expr = {
 };
 
 Literal: Literal = {
-    <int:r"[0-9]+"> => Literal::Int(u32::from_str(int).unwrap()),
-    <string:r#""[^"]*""#> => Literal::String(string[1..string.len() - 1].to_owned()),
+    <int:"literal_integer"> => Literal::Int(u32::from_str(int).unwrap()),
+    <string:"literal_string"> => Literal::String(string[1..string.len() - 1].to_owned()),
 };
 
 Arg: Arg = {
@@ -92,4 +93,47 @@ Comma<T>: Vec<T> = {
     }
 };
 
-Name: String = r"[A-Za-z_][A-Za-z0-9_]*" => <>.to_owned();
+Name: String = "ident" => <>.to_owned();
+
+//
+
+extern {
+    type Location = usize;
+    type Error = failure::Error;
+
+    enum Tok {
+        "literal_integer" => Tok::LitInt,
+        "literal_string" => Tok::LitStr,
+        "ident" => Tok::Ident,
+
+        "sep" => Tok::LineSep,
+        "{{" => Tok::Indent,
+        "}}" => Tok::Dedent,
+
+        "else" => Tok::KwElse,
+        "extern" => Tok::KwExtern,
+        "fn" => Tok::KwFn,
+        "if" => Tok::KwIf,
+        "int" => Tok::KwInt,
+        "let" => Tok::KwLet,
+        "return" => Tok::KwReturn,
+        "string" => Tok::KwString,
+        "struct" => Tok::KwStruct,
+        "while" => Tok::KwWhile,
+
+        ":" => Tok::SymColon,
+        "," => Tok::SymComma,
+        "." => Tok::SymDot,
+        "=" => Tok::SymEqual,
+        "(" => Tok::SymLeftParen,
+        "-" => Tok::SymMinus,
+        "+" => Tok::SymPlus,
+        ")" => Tok::SymRightParen,
+        "*" => Tok::SymStar,
+
+        "->" => Tok::SymArrow,
+        "==" => Tok::SymIsEquals,
+        "!=" => Tok::SymNotEquals,
+    }
+}
+
