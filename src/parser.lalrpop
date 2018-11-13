@@ -74,8 +74,8 @@ ExprBottom: ast::Expr = {
 };
 
 Literal: Literal = {
-    <int:"literal_integer"> => Literal::Int(u32::from_str(int).unwrap()),
-    <string:"literal_string"> => Literal::String(string[1..string.len() - 1].to_owned()),
+    <int:LitInt> => Literal::Int(u32::from_str(int).unwrap()),
+    <string:LitStr> => Literal::String(string[1..string.len() - 1].to_owned()),
 };
 
 Arg: Arg = {
@@ -93,7 +93,7 @@ Comma<T>: Vec<T> = {
     }
 };
 
-Name: String = "ident" => <>.to_owned();
+Name: String = Ident => <>.to_owned();
 
 //
 
@@ -102,9 +102,9 @@ extern {
     type Error = failure::Error;
 
     enum Tok {
-        "literal_integer" => Tok::LitInt,
-        "literal_string" => Tok::LitStr,
-        "ident" => Tok::Ident,
+        LitInt => Tok::LitInt(u32), // replace this with int enum later
+        LitStr => Tok::LitStr(String),
+        Ident => Tok::Ident(String),
 
         "sep" => Tok::LineSep,
         "{{" => Tok::Indent,
