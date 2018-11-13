@@ -6,6 +6,8 @@ It's a language!
 Running It
 ----------
 
+(currently broken since I'm rewriting the lexer)
+
 ```bash
 make
 ```
