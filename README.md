@@ -50,7 +50,7 @@ Checklist
     - [ ] For Loops (depends on std iterators)
 - [ ] Structs
   - [ ] Unions/Enums
-- [ ] Type Inference (in progress) 
+- [x] Type Inference (in progress) 
   - [ ] First Class Functions
   - [ ] Generics
   - [ ] Type Classes
