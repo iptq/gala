@@ -28,9 +28,10 @@ Body: Vec<ast::Stmt> = {
 };
 
 Stmt: ast::Stmt = {
-    <name:r"[A-Za-z_][A-Za-z0-9_]*"> "=" <expr:Expr> => ast::Stmt::Assign(name.to_owned(), expr),
+    <re:"let"?> <name:r"[A-Za-z_][A-Za-z0-9_]*"> "=" <expr:Expr> => ast::Stmt::Assign(match re { Some(_) => false, None => true }, name.to_owned(), expr),
     <expr:Expr> => ast::Stmt::Expr(expr),
     "if" <cond:Expr> ":" <body1:Body> <body2:("else" ":" Body)?> "end" => ast::Stmt::If(cond, body1, body2.map(|(_, _, body)| body)),
+    "while" <cond:Expr> ":" <body:Body> "end" => ast::Stmt::While(cond, body),
     "return" <expr:Expr?> => ast::Stmt::Return(expr),
 };
 
@@ -38,6 +39,7 @@ Expr: ast::Expr = CompExpr;
 
 CompExpr: ast::Expr = {
     <left:CompExpr> "==" <right:ArithExpr> => ast::Expr::Equals(Box::new(left), Box::new(right)),
+    <left:CompExpr> "!=" <right:ArithExpr> => ast::Expr::NotEquals(Box::new(left), Box::new(right)),
     <expr:ArithExpr> => expr,
 };
 

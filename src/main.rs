@@ -63,7 +63,7 @@ fn main() -> Result<(), Error> {
     let mut context = mir::Context::new();
     let mut mir = ast.into_mir(&mut context);
 
-    mir.typeck();
+    // mir.typeck();
 
     let mut emitter = Emitter::new();
     mir.generate(&mut emitter);

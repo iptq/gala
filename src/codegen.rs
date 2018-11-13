@@ -141,17 +141,24 @@ impl Codegen for mir::TopDecl {
                 emitter.push_line(format!("declare i32 @{}(i8* nocapture) nounwind", name));
             }
             TopDecl::Fn(name, args, _ty, stmts) => {
-                let args = args
-                    .iter()
-                    .map(|arg| {
-                        let argn = emitter.next_int();
-                        emitter.new_variable(&arg.0, argn);
-                        format!("{} %i{}", arg.1.ir_repr().as_ref(), argn)
-                    }).collect::<Vec<_>>()
-                    .join(", ");
-                emitter.push_line(format!("define i32 @{} ({}) {{", name, args));
+                let mut args_s = Vec::new();
+                let mut args_a = Vec::new();
+                for arg in args {
+                    let argn = emitter.next_int();
+                    args_s.push(format!("{} %i{}", arg.1.ir_repr().as_ref(), argn));
+
+                    let tmp = emitter.next_int();
+                    args_a.push(format!("%i{} = alloca i32", tmp));
+                    args_a.push(format!("store i32 %i{}, i32* %i{}", argn, tmp));
+                    emitter.new_variable(&arg.0, tmp);
+                }
+                for arg in args {}
+                emitter.push_line(format!("define i32 @{} ({}) {{", name, args_s.join(", ")));
                 emitter.push_line("entry:");
                 emitter.scope();
+                for arg in args_a {
+                    emitter.push_line(arg);
+                }
                 for stmt in stmts {
                     stmt.generate(emitter);
                 }
@@ -167,11 +174,21 @@ impl Codegen for mir::Stmt {
     fn generate(&self, emitter: &mut Emitter) {
         use mir::Stmt;
         match self {
-            Stmt::Assign(name, expr) => {
+            Stmt::Assign(re, name, expr) => {
                 let assigned = expr.generate(emitter);
-                let result = emitter.next_int();
-                emitter.new_variable(name, result);
-                emitter.push_line(format!("%i{} = add i32 %i{}, 0", result, assigned));
+                let result = if !*re {
+                    let result = emitter.next_int();
+                    emitter.new_variable(name, result);
+                    emitter.push_line(format!("%i{} = alloca i32", result));
+                    result
+                } else {
+                    emitter
+                        .lookup_name(name)
+                        .expect(&format!("Name '{}' not found.", name))
+                };
+                let tmp = emitter.next_int();
+                emitter.push_line(format!("%i{} = add i32 %i{}, 0", tmp, assigned));
+                emitter.push_line(format!("store i32 %i{}, i32* %i{}", tmp, result));
             }
             Stmt::Expr(expr) => {
                 expr.generate(emitter);
@@ -211,6 +228,31 @@ impl Codegen for mir::Stmt {
                 }
                 emitter.push_line(format!("L{}:", done_label));
             }
+            Stmt::While(cond, body) => {
+                let begin_label = letter_of_number(emitter.next_int());
+                let check_label = letter_of_number(emitter.next_int());
+                let done_label = letter_of_number(emitter.next_int());
+                emitter.push_line(format!("br label %L{}", check_label));
+                emitter.push_line(format!("L{}:", begin_label));
+                emitter.scope();
+                for stmt in body {
+                    stmt.generate(emitter);
+                }
+                emitter.pop();
+
+                emitter.push_line(format!("br label %L{}", check_label));
+                emitter.push_line(format!("L{}:", check_label));
+
+                let cond_ty = cond.get_type().ir_repr().as_ref().to_owned();
+                let cond = cond.generate(emitter);
+                let cmp = emitter.next_int();
+                emitter.push_line(format!("%i{} = icmp ne {} %i{}, 0", cmp, cond_ty, cond));
+                emitter.push_line(format!(
+                    "br i1 %i{}, label %L{}, label %L{}",
+                    cmp, begin_label, done_label
+                ));
+                emitter.push_line(format!("L{}:", done_label));
+            }
             Stmt::Return(expr) => match expr {
                 Some(expr) => {
                     let expr = expr.generate(emitter);
@@ -242,10 +284,15 @@ impl Codegen<i32> for mir::Expr {
             }
             Expr::Literal(lit, _ty) => lit.generate(emitter),
             Expr::Name(name, _ty) => match emitter.lookup_name(name) {
-                Some(val) => val,
+                Some(val) => {
+                    let result = emitter.next_int();
+                    emitter.push_line(format!("%i{} = load i32, i32* %i{}", result, val));
+                    result
+                }
                 None => panic!("Could not find name '{}'", name),
             },
-            Expr::Equals(left, right, _ty)
+            Expr::NotEquals(left, right, _ty)
+            | Expr::Equals(left, right, _ty)
             | Expr::Plus(left, right, _ty)
             | Expr::Minus(left, right, _ty)
             | Expr::Times(left, right, _ty) => {
@@ -256,6 +303,7 @@ impl Codegen<i32> for mir::Expr {
                     "%i{} = {} i32 %i{}, %i{}",
                     result,
                     match self {
+                        Expr::NotEquals(_, _, _) => "icmp ne",
                         Expr::Equals(_, _, _) => "icmp eq",
                         Expr::Plus(_, _, _) => "add",
                         Expr::Minus(_, _, _) => "sub",

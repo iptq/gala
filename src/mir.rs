@@ -30,9 +30,10 @@ pub enum TopDecl {
 
 #[derive(Debug)]
 pub enum Stmt {
-    Assign(String, Expr),
+    Assign(bool, String, Expr),
     Expr(Expr),
     If(Expr, Vec<Stmt>, Option<Vec<Stmt>>),
+    While(Expr, Vec<Stmt>),
     Return(Option<Expr>),
 }
 
@@ -41,6 +42,7 @@ pub enum Expr {
     Call(String, Vec<Expr>, Type),
     Literal(Literal, Type),
     Name(String, Type),
+    NotEquals(Box<Expr>, Box<Expr>, Type),
     Equals(Box<Expr>, Box<Expr>, Type),
     Plus(Box<Expr>, Box<Expr>, Type),
     Minus(Box<Expr>, Box<Expr>, Type),
@@ -53,6 +55,7 @@ impl Typed for Expr {
             Expr::Call(_, _, t)
             | Expr::Literal(_, t)
             | Expr::Name(_, t)
+            | Expr::NotEquals(_, _, t)
             | Expr::Equals(_, _, t)
             | Expr::Plus(_, _, t)
             | Expr::Minus(_, _, t)

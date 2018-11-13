@@ -70,7 +70,7 @@ impl mir::Stmt {
     pub fn generate_constraints(&mut self, ctx: &mut Vec<TypeContext>) -> HashSet<Constraint> {
         use mir::Stmt;
         match self {
-            Stmt::Assign(name, expr) => expr.generate_constraints(ctx),
+            Stmt::Assign(_re, _name, expr) => expr.generate_constraints(ctx),
             Stmt::Expr(expr) => expr.generate_constraints(ctx),
             Stmt::If(cond, body1, body2) => vec![
                 cond.generate_constraints(ctx),
@@ -85,6 +85,14 @@ impl mir::Stmt {
                         .collect::<HashSet<_>>(),
                     None => HashSet::new(),
                 },
+            ].into_iter()
+            .flatten()
+            .collect::<HashSet<_>>(),
+            Stmt::While(cond, body) => vec![
+                cond.generate_constraints(ctx),
+                body.iter_mut()
+                    .flat_map(|stmt| stmt.generate_constraints(ctx))
+                    .collect::<HashSet<_>>(),
             ].into_iter()
             .flatten()
             .collect::<HashSet<_>>(),
