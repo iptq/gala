@@ -5,7 +5,7 @@ use failure::Error;
 use common::{next_int, Type, Typed};
 use mir;
 
-type Substitution = HashMap<u32, Type>;
+pub type Substitution = HashMap<u32, Type>;
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub struct Constraint(pub Type, pub Type);
@@ -46,8 +46,6 @@ impl Default for TypeStack {
 
 impl TypeLookup for TypeStack {
     fn lookup(&self, name: impl AsRef<str>) -> Option<Type> {
-        eprintln!("Looking up '{}'...", name.as_ref());
-        eprintln!("{:?}", self);
         for item in self.0.iter().rev() {
             if let Some(t) = item.lookup(&name) {
                 return Some(t);
@@ -103,13 +101,17 @@ impl mir::TopDecl {
         match self {
             TopDecl::Fn(name, args, ty, body) => {
                 ctx.scope();
+                for arg in args {
+                    ctx.variable(&arg.0, &arg.get_type());
+                }
                 let constraints = body
                     .iter_mut()
                     .flat_map(|stmt| stmt.generate_constraints(ctx))
                     .collect::<HashSet<_>>();
-                eprintln!("constraints: {:?}", constraints);
-                let substitutions = unify(constraints);
-                eprintln!("substitutions: {:?}", substitutions);
+                let substitutions = unify(constraints)?;
+                for stmt in body.iter_mut() {
+                    stmt.apply_subst(&substitutions);
+                }
                 ctx.unscope();
                 Ok(())
             }
@@ -119,12 +121,47 @@ impl mir::TopDecl {
 }
 
 impl mir::Stmt {
+    pub fn apply_subst(&mut self, subst: &Substitution) {
+        use mir::Stmt;
+        match self {
+            Stmt::Assign(_, _, expr) => expr.apply_subst(subst),
+            Stmt::Expr(expr) => expr.apply_subst(subst),
+            Stmt::If(cond, body1, body2) => {
+                cond.apply_subst(subst);
+                for stmt in body1 {
+                    stmt.apply_subst(subst);
+                }
+                if let Some(body) = body2 {
+                    for stmt in body {
+                        stmt.apply_subst(subst);
+                    }
+                }
+            }
+            Stmt::While(cond, body) => {
+                cond.apply_subst(subst);
+                for stmt in body.iter_mut() {
+                    stmt.apply_subst(subst);
+                }
+            }
+            Stmt::Return(expr) => if let Some(expr) = expr {
+                expr.apply_subst(subst);
+            },
+        }
+    }
     pub fn generate_constraints(&mut self, ctx: &mut TypeStack) -> HashSet<Constraint> {
         use mir::Stmt;
         match self {
-            Stmt::Assign(_re, name, expr) => {
-                ctx.variable(name, &Type::T(next_int()));
-                expr.generate_constraints(ctx)
+            Stmt::Assign(re, name, expr) => {
+                if !*re {
+                    ctx.variable(&name, &Type::T(next_int()));
+                }
+
+                let mut result = expr.generate_constraints(ctx);
+                result.extend(match ctx.lookup(&name) {
+                    Some(ty) => vec![Constraint::new(&ty, &expr.get_type())],
+                    None => panic!("Name '{}' not found.", name),
+                });
+                result
             }
             Stmt::Expr(expr) => expr.generate_constraints(ctx),
             Stmt::If(cond, body1, body2) => vec![
@@ -166,6 +203,28 @@ impl mir::Stmt {
 }
 
 impl mir::Expr {
+    pub fn apply_subst(&mut self, subst: &Substitution) {
+        use mir::Expr;
+        match self {
+            Expr::Literal(lit, ty) => ty.apply_subst(subst),
+            Expr::Name(_, ty) => ty.apply_subst(subst),
+            Expr::Call(_, args, ty) => {
+                for arg in args {
+                    arg.apply_subst(subst);
+                }
+                ty.apply_subst(subst);
+            }
+            Expr::NotEquals(left, right, ty)
+            | Expr::Equals(left, right, ty)
+            | Expr::Times(left, right, ty)
+            | Expr::Minus(left, right, ty)
+            | Expr::Plus(left, right, ty) => {
+                left.apply_subst(subst);
+                right.apply_subst(subst);
+                ty.apply_subst(subst);
+            }
+        }
+    }
     pub fn generate_constraints(&mut self, ctx: &mut TypeStack) -> HashSet<Constraint> {
         use mir::Expr;
         match self {
@@ -175,10 +234,14 @@ impl mir::Expr {
                         panic!("Function argument length mismatch.");
                     }
 
-                    args.iter()
-                        .zip(args_t.iter())
-                        .map(|(a, b)| Constraint::new(&a.get_type(), &b))
-                        .collect::<Vec<_>>()
+                    let mut result = vec![Constraint::new(&ret, &ty)];
+                    result.extend(
+                        args.iter()
+                            .zip(args_t.iter())
+                            .map(|(a, b)| Constraint::new(&a.get_type(), &b))
+                            .collect::<Vec<_>>(),
+                    );
+                    result
                 }
                 _ => panic!("Name '{}' not bound or not a function.", name),
             },
@@ -224,27 +287,7 @@ fn unify(constraints: HashSet<Constraint>) -> Result<Substitution, Error> {
             continue;
         }
 
-        eprintln!("Applying constraint {:?} ~ {:?}", t1, t2);
         match (&t1, &t2) {
-            (Type::T(n1), Type::T(n2)) => {
-                let sub = match (substitution.get(n1), substitution.get(n2)) {
-                    (Some(t1), Some(t2)) if t1 == t2 => None,
-                    (Some(t1), Some(t2)) => unreachable!(),
-                    (Some(n), None) => Some((*n1, *n2)),
-                    (None, Some(n)) => Some((*n2, *n1)),
-                    (None, None) => None,
-                };
-                match sub {
-                    Some((a, b)) => {
-                        let t = substitution
-                            .get(&a)
-                            .expect("we already know this is in the substitution")
-                            .clone();
-                        substitution.insert(b, t);
-                    }
-                    None => (),
-                }
-            }
             (Type::T(n), t) | (t, Type::T(n)) => {
                 for Constraint(c1, c2) in &mut constraints {
                     c1.sub(*n, &t);
@@ -255,5 +298,28 @@ fn unify(constraints: HashSet<Constraint>) -> Result<Substitution, Error> {
             _ => bail!("Can't unify {:?} ~ {:?}", t1, t2),
         };
     }
+
+    loop {
+        let mut flag = false;
+        let mut inserts = Vec::new();
+        for (n, t) in substitution.iter() {
+            match t {
+                Type::T(m) => {
+                    flag = true;
+                    let s = substitution.get(m).clone();
+
+                    if let Some(t) = s {
+                        inserts.push((*n, t.clone()));
+                    }
+                }
+                _ => (),
+            }
+        }
+        substitution.extend(inserts);
+        if !flag {
+            break;
+        }
+    }
+
     Ok(substitution)
 }

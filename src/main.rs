@@ -68,6 +68,7 @@ fn main() -> Result<(), Error> {
 
     let mut stack = TypeStack::default();
     mir.typeck(&mut stack);
+    eprintln!("{:?}", mir);
 
     let mut emitter = Emitter::new();
     mir.generate(&mut emitter);

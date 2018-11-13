@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use typeck::Substitution;
 
 lazy_static! {
     static ref counter: Arc<Mutex<u32>> = Arc::new(Mutex::new(0));
@@ -30,10 +31,25 @@ impl Type {
         }
     }
 
+    pub fn apply_subst(&mut self, subst: &Substitution) {
+        for (a, b) in subst.iter() {
+            self.sub(*a, b);
+        }
+    }
+
     pub fn sub(&mut self, var: u32, t: &Type) {
         let new_self = match self {
             Type::Bool | Type::Int | Type::String => None,
             Type::T(n) if *n == var => Some(t.clone()),
+            Type::Fn(args, ret) => {
+                let mut args = args.clone();
+                let mut ret = ret.clone();
+                for arg in args.iter_mut() {
+                    arg.sub(var, t);
+                }
+                ret.sub(var, t);
+                Some(Type::Fn(args, ret))
+            }
             _ => None,
         };
         if let Some(new_self) = new_self {
