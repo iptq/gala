@@ -1,9 +1,9 @@
 use std::collections::BTreeMap;
 
-use common::{self, Typed};
+use common::{self, next_int, Typed};
 use mir;
 
-fn letter_of_number(n: i32) -> String {
+fn letter_of_number(n: u32) -> String {
     let mut result = String::new();
     let mut n = n;
     while n > 0 {
@@ -36,7 +36,7 @@ impl Into<String> for Item {
 
 #[derive(Debug, Default)]
 pub struct Scope {
-    names: BTreeMap<String, i32>,
+    names: BTreeMap<String, u32>,
     items: Vec<Item>,
 }
 
@@ -50,10 +50,10 @@ impl Scope {
     pub fn push_line(&mut self, line: impl AsRef<str>) {
         self.items.push(Item::Line(line.as_ref().to_owned()));
     }
-    pub fn new_variable(&mut self, name: impl AsRef<str>, id: i32) {
+    pub fn new_variable(&mut self, name: impl AsRef<str>, id: u32) {
         self.names.insert(name.as_ref().to_owned(), id);
     }
-    pub fn lookup_name(&self, name: impl AsRef<str>) -> Option<i32> {
+    pub fn lookup_name(&self, name: impl AsRef<str>) -> Option<u32> {
         self.names.get(name.as_ref()).map(|v| v.clone())
     }
     pub fn as_string(&self) -> String {
@@ -67,14 +67,12 @@ impl Scope {
 
 #[derive(Debug)]
 pub struct Emitter {
-    inc: i32,
     scope_stack: Vec<Scope>,
 }
 
 impl Emitter {
     pub fn new() -> Self {
         Emitter {
-            inc: 1,
             scope_stack: vec![Scope::default()],
         }
     }
@@ -88,17 +86,15 @@ impl Emitter {
                 .map(|scope2| scope2.push_subscope(scope));
         }
     }
-    pub fn next_int(&mut self) -> i32 {
-        let r = self.inc;
-        self.inc += 1;
-        r
+    pub fn next_int(&mut self) -> u32 {
+        next_int()
     }
-    pub fn new_variable(&mut self, name: impl AsRef<str>, id: i32) {
+    pub fn new_variable(&mut self, name: impl AsRef<str>, id: u32) {
         self.scope_stack
             .last_mut()
             .map(|scope| scope.new_variable(name, id));
     }
-    pub fn lookup_name(&self, name: impl AsRef<str>) -> Option<i32> {
+    pub fn lookup_name(&self, name: impl AsRef<str>) -> Option<u32> {
         for v in self.scope_stack.iter().rev() {
             if let Some(n) = v.lookup_name(&name) {
                 return Some(n);
@@ -165,6 +161,14 @@ impl Codegen for mir::TopDecl {
                 emitter.pop();
                 emitter.push_line("ret i32 0");
                 emitter.push_line("}");
+            }
+            TopDecl::Struct(name, fields) => {
+                let fields_s = fields
+                    .iter()
+                    .map(|field| format!("{}", field.get_type().ir_repr().as_ref()))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                emitter.push_line(format!("%st.{} = type {{ {} }}", name, fields_s));
             }
         }
     }
@@ -266,8 +270,8 @@ impl Codegen for mir::Stmt {
     }
 }
 
-impl Codegen<i32> for mir::Expr {
-    fn generate(&self, emitter: &mut Emitter) -> i32 {
+impl Codegen<u32> for mir::Expr {
+    fn generate(&self, emitter: &mut Emitter) -> u32 {
         use mir::Expr;
         match self {
             Expr::Call(func, args, _ty) => {
@@ -319,8 +323,8 @@ impl Codegen<i32> for mir::Expr {
     }
 }
 
-impl Codegen<i32> for common::Literal {
-    fn generate(&self, emitter: &mut Emitter) -> i32 {
+impl Codegen<u32> for common::Literal {
+    fn generate(&self, emitter: &mut Emitter) -> u32 {
         use common::Literal;
         match self {
             Literal::Int(n) => {

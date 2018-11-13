@@ -1,17 +1,11 @@
-use common::{Arg, Literal, Type, Typed};
+use common::{next_int, Arg, Field, Literal, Type, Typed};
 
-pub struct Context {
-    inc: u32,
-}
+#[derive(Default)]
+pub struct Context {}
 
 impl Context {
-    pub fn new() -> Self {
-        Context { inc: 0 }
-    }
     pub fn next(&mut self) -> Type {
-        let result = self.inc;
-        self.inc += 1;
-        Type::T(result)
+        Type::T(next_int())
     }
 }
 
@@ -26,6 +20,7 @@ pub struct Program(pub Vec<TopDecl>);
 pub enum TopDecl {
     Extern(String, Type),
     Fn(String, Vec<Arg>, Type, Vec<Stmt>),
+    Struct(String, Vec<Field>),
 }
 
 #[derive(Debug)]

@@ -1,6 +1,9 @@
 all: a.out
 
-.PHONY: clean
+.PHONY: clean check
+
+check:
+	cargo check
 
 a.out: out.s
 	gcc -o $@ -lc out.s

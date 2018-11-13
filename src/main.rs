@@ -3,6 +3,8 @@ extern crate failure;
 extern crate itertools;
 #[macro_use]
 extern crate lalrpop_util;
+#[macro_use]
+extern crate lazy_static;
 extern crate structopt;
 
 mod ast;
@@ -20,6 +22,7 @@ use structopt::StructOpt;
 
 use codegen::{Codegen, Emitter};
 use mir::IntoMir;
+use typeck::TypeStack;
 
 enum Input {
     File(File),
@@ -60,10 +63,11 @@ fn main() -> Result<(), Error> {
         .parse(&contents)
         .map_err(|err| format_err!("{}", err))?;
 
-    let mut context = mir::Context::new();
+    let mut context = mir::Context::default();
     let mut mir = ast.into_mir(&mut context);
 
-    // mir.typeck();
+    let mut stack = TypeStack::default();
+    mir.typeck(&mut stack);
 
     let mut emitter = Emitter::new();
     mir.generate(&mut emitter);

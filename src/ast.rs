@@ -1,4 +1,4 @@
-use common::{Arg, Literal, Type, Typed};
+use common::{Arg, Field, Literal, Type, Typed};
 use mir::{self, Context, IntoMir};
 
 #[derive(Debug)]
@@ -19,6 +19,7 @@ impl IntoMir<mir::Program> for Program {
 pub enum TopDecl {
     Extern(String, Type),
     Fn(String, Vec<Arg>, Type, Vec<Stmt>),
+    Struct(String, Vec<Field>),
 }
 
 impl IntoMir<mir::TopDecl> for TopDecl {
@@ -33,6 +34,7 @@ impl IntoMir<mir::TopDecl> for TopDecl {
                     .map(|stmt| stmt.into_mir(ctx))
                     .collect::<Vec<_>>(),
             ),
+            TopDecl::Struct(name, fields) => mir::TopDecl::Struct(name, fields),
         }
     }
 }
@@ -79,6 +81,7 @@ pub enum Expr {
     Call(String, Vec<Expr>),
     Literal(Literal),
     Name(String),
+    Dot(Box<Expr>, Box<Expr>),
     NotEquals(Box<Expr>, Box<Expr>),
     Equals(Box<Expr>, Box<Expr>),
     Plus(Box<Expr>, Box<Expr>),
@@ -90,17 +93,18 @@ impl IntoMir<mir::Expr> for Expr {
     fn into_mir(self, ctx: &mut Context) -> mir::Expr {
         match self {
             Expr::Call(func, args) => {
-                let args = args
+                let args_m = args
                     .into_iter()
                     .map(|expr| expr.into_mir(ctx))
                     .collect::<Vec<_>>();
-                mir::Expr::Call(func, args, ctx.next())
+                mir::Expr::Call(func, args_m, ctx.next())
             }
             Expr::Literal(lit) => {
                 let ty = lit.get_type();
                 mir::Expr::Literal(lit.into(), ty)
             }
             Expr::Name(name) => mir::Expr::Name(name, ctx.next()),
+            Expr::Dot(left, right) => unimplemented!(),
             Expr::NotEquals(left, right) => {
                 let left = Box::new((*left).into_mir(ctx));
                 let right = Box::new((*right).into_mir(ctx));

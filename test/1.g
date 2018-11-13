@@ -1,4 +1,9 @@
-extern puts: int
+extern puts: (string) -> int
+
+struct Pair:
+    first: int;
+    second: int;
+end
 
 fn factorial(n: int): int =
     let p = 1;
