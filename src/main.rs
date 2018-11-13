@@ -1,5 +1,6 @@
 #[macro_use]
 extern crate failure;
+extern crate itertools;
 #[macro_use]
 extern crate lalrpop_util;
 extern crate structopt;
@@ -19,7 +20,6 @@ use structopt::StructOpt;
 
 use codegen::{Codegen, Emitter};
 use mir::IntoMir;
-use typeck::Typechecker;
 
 enum Input {
     File(File),
@@ -61,9 +61,9 @@ fn main() -> Result<(), Error> {
         .map_err(|err| format_err!("{}", err))?;
 
     let mut context = mir::Context::new();
-    let mir = ast.into_mir(&mut context);
+    let mut mir = ast.into_mir(&mut context);
 
-    let constraints = mir.generate_constraints();
+    let constraints = mir.typeck();
 
     let mut emitter = Emitter::new();
     mir.generate(&mut emitter);
