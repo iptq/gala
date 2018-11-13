@@ -2,14 +2,41 @@ use std::collections::{BTreeMap, HashSet};
 
 use failure::Error;
 
-use common::Type;
+use common::{Type, Typed};
 use mir;
 
 #[derive(Debug, PartialEq, Eq, Hash)]
-pub struct Constraint(Type, Type);
+pub struct Constraint(pub Type, pub Type);
+
+impl Constraint {
+    pub fn new(left: &Type, right: &Type) -> Self {
+        Constraint(left.clone(), right.clone())
+    }
+}
+
+pub trait TypeLookup {
+    fn lookup(&self, name: impl AsRef<str>) -> Option<Type>;
+}
 
 pub struct TypeContext {
     bindings: BTreeMap<String, Type>,
+}
+
+impl TypeLookup for TypeContext {
+    fn lookup(&self, name: impl AsRef<str>) -> Option<Type> {
+        self.bindings.get(name.as_ref()).map(|ty| ty.clone())
+    }
+}
+
+impl<T: TypeLookup> TypeLookup for Vec<T> {
+    fn lookup(&self, name: impl AsRef<str>) -> Option<Type> {
+        for item in self.iter().rev() {
+            if let Some(t) = item.lookup(&name) {
+                return Some(t);
+            }
+        }
+        None
+    }
 }
 
 impl mir::Program {
@@ -72,10 +99,25 @@ impl mir::Stmt {
 impl mir::Expr {
     pub fn generate_constraints(&mut self, ctx: &mut Vec<TypeContext>) -> HashSet<Constraint> {
         use mir::Expr;
-        let mut c = HashSet::new();
         match self {
-            _ => unimplemented!(),
-        }
-        c
+            Expr::Name(name, ty) => match ctx.lookup(name) {
+                Some(ty1) => vec![Constraint::new(&ty1, ty)],
+                None => vec![],
+            },
+            Expr::Equals(left, right, ty) => {
+                let left = left.get_type();
+                let right = right.get_type();
+                vec![
+                    Constraint::new(&left, ty),
+                    Constraint::new(&right, ty),
+                    Constraint::new(&left, &right),
+                ]
+            }
+            _ => {
+                panic!("{:?}", self);
+                unimplemented!()
+            }
+        }.into_iter()
+        .collect::<HashSet<_>>()
     }
 }
