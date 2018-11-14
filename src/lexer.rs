@@ -4,8 +4,37 @@ use failure::Error;
 
 #[derive(Clone)]
 pub enum Tok {
+    Indent,
+    Dedent,
+    LineSep,
+
+    LitInt(u32),
+    LitStr(String),
+    Ident(String),
+
+    KwElse,
     KwExtern,
+    KwFn,
+    KwIf,
+    KwInt,
+    KwLet,
+    KwReturn,
+    KwString,
+    KwStruct,
+    KwWhile,
+
+    SymArrow,
     SymColon,
+    SymComma,
+    SymDot,
+    SymEqual,
+    SymLeftParen,
+    SymIsEquals,
+    SymMinus,
+    SymNotEquals,
+    SymPlus,
+    SymRightParen,
+    SymStar,
 }
 
 pub type Loc = usize;

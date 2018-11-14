@@ -36,7 +36,7 @@ Body<T>: Vec<T> = {
 Stmt: ast::Stmt = {
     <re:"let"?> <name:Name> "=" <expr:Expr> => ast::Stmt::Assign(match re { Some(_) => false, None => true }, name, expr),
     <expr:Expr> => ast::Stmt::Expr(expr),
-    "if" <cond:Expr> ":" "{{" <body1:Body<Stmt>> "}}" <body2:("else" ":" "{{" Body<Stmt> "}}")?> => ast::Stmt::If(cond, body1, body2.map(|(_, _, body)| body)),
+    "if" <cond:Expr> ":" "{{" <body1:Body<Stmt>> "}}" <body2:("else" ":" "{{" Body<Stmt> "}}")?> => ast::Stmt::If(cond, body1, body2.map(|(_, _, _, body, _)| body)),
     "while" <cond:Expr> ":" "{{" <body:Body<Stmt>> "}}" => ast::Stmt::While(cond, body),
     "return" <expr:Expr?> => ast::Stmt::Return(expr),
 };
@@ -74,8 +74,8 @@ ExprBottom: ast::Expr = {
 };
 
 Literal: Literal = {
-    <int:LitInt> => Literal::Int(u32::from_str(int).unwrap()),
-    <string:LitStr> => Literal::String(string[1..string.len() - 1].to_owned()),
+    <int:LitInt> => Literal::Int(int),
+    <string:LitStr> => Literal::String(string),
 };
 
 Arg: Arg = {
