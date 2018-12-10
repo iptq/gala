@@ -6,8 +6,6 @@ It's a language!
 Running It
 ----------
 
-(currently broken since I'm rewriting the lexer)
-
 ```bash
 make
 ```
@@ -41,7 +39,7 @@ Checklist
 ---------
 
 - [ ] Syntax
-  - [ ] Custom lexer
+  - [x] Custom lexer
 - [ ] Good Error Reporting
 - [ ] Variables
   - [x] Declaration
