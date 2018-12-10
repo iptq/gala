@@ -60,10 +60,13 @@ fn main() -> Result<(), Error> {
     let contents = String::from_utf8(buf)?;
 
     let lexer = lexer::Lexer::new(&contents);
+    // eprintln!("Lexer: {:#?}", lexer.clone().collect::<Vec<_>>());
+    // panic!("");
+
     let parser = parser::ProgramParser::new();
     let ast = parser
-        .parse(&contents)
-        .map_err(|err| format_err!("{}", err))?;
+        .parse(lexer)
+        .map_err(|err| format_err!("{:?}", err))?;
 
     let mut context = mir::Context::default();
     let mut mir = ast.into_mir(&mut context);

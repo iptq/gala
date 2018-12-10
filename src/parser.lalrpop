@@ -2,17 +2,19 @@ use std::str::FromStr;
 
 use ast;
 use common::{Field, Literal, Arg, Type};
-use lexer::Tok;
+use lexer::Token;
 
 grammar;
 
-pub Program: ast::Program = <decls:TopDecl+> => ast::Program(decls);
+pub Program: ast::Program = <decls:(Body<TopDecl> "EOF")> => ast::Program(decls.0);
 
 TopDecl: ast::TopDecl = {
     "extern" <name:Name> ":" <ty:Type> => ast::TopDecl::Extern(name, ty),
-    "fn" <name:Name> "(" <args:Comma<Arg>> ")" ":" <ty:Type> "=" "{{" <stmts:Body<Stmt>> "}}" => ast::TopDecl::Fn(name, args, ty, stmts),
-    "struct" <name:Name> ":" "{{" <fields:Body<Field>> "}}" => ast::TopDecl::Struct(name, fields),
+    "fn" <name:Name> "(" <args:Comma<Arg>> ")" ":" <ty:Type> "=" <stmts:Block<Stmt>> => ast::TopDecl::Fn(name, args, ty, stmts),
+    "struct" <name:Name> "=" <fields:Block<Field>> => ast::TopDecl::Struct(name, fields),
 };
+
+Block<T>: Vec<T> = "Newline"+ "Indent" <body:Body<T>> "Dedent" => body;
 
 Field: Field = <name:Name> ":" <ty:Type> => Field(name, ty);
 
@@ -23,12 +25,12 @@ Type: Type = {
 };
 
 Body<T>: Vec<T> = {
-    <f:T?> <stmts:("sep" <T>)*> "sep"? => match f {
-        None => stmts,
+    <f:T?> <v:("Newline"+ <T>)*> "Newline"* => match f {
+        None => v,
         Some(s) => {
-            let mut stmts = stmts;
-            stmts.insert(0, s);
-            stmts
+            let mut v = v;
+            v.insert(0, s);
+            v
         },
     }
 };
@@ -36,8 +38,8 @@ Body<T>: Vec<T> = {
 Stmt: ast::Stmt = {
     <re:"let"?> <name:Name> "=" <expr:Expr> => ast::Stmt::Assign(match re { Some(_) => false, None => true }, name, expr),
     <expr:Expr> => ast::Stmt::Expr(expr),
-    "if" <cond:Expr> ":" "{{" <body1:Body<Stmt>> "}}" <body2:("else" ":" "{{" Body<Stmt> "}}")?> => ast::Stmt::If(cond, body1, body2.map(|(_, _, _, body, _)| body)),
-    "while" <cond:Expr> ":" "{{" <body:Body<Stmt>> "}}" => ast::Stmt::While(cond, body),
+    "if" <cond:Expr> ":" <body1:Block<Stmt>> <body2:("else" ":" Block<Stmt>)?> => ast::Stmt::If(cond, body1, body2.map(|(_, _, body)| body)),
+    "while" <cond:Expr> ":" <body:Block<Stmt>> => ast::Stmt::While(cond, body),
     "return" <expr:Expr?> => ast::Stmt::Return(expr),
 };
 
@@ -74,8 +76,8 @@ ExprBottom: ast::Expr = {
 };
 
 Literal: Literal = {
-    <int:LitInt> => Literal::Int(int),
-    <string:LitStr> => Literal::String(string),
+    <int:"Integer"> => Literal::Int(int),
+    <string:"String"> => Literal::String(string),
 };
 
 Arg: Arg = {
@@ -93,7 +95,7 @@ Comma<T>: Vec<T> = {
     }
 };
 
-Name: String = Ident => <>.to_owned();
+Name: String = "Ident" => <>.to_owned();
 
 //
 
@@ -101,39 +103,48 @@ extern {
     type Location = usize;
     type Error = failure::Error;
 
-    enum Tok {
-        LitInt => Tok::LitInt(u32), // replace this with int enum later
-        LitStr => Tok::LitStr(String),
-        Ident => Tok::Ident(String),
+    enum Token {
+        // symbols
+        "->" => Token::Arrow,
+        "==" => Token::DoubleEqual,
+        "!=" => Token::NotEqual,
 
-        "sep" => Tok::LineSep,
-        "{{" => Tok::Indent,
-        "}}" => Tok::Dedent,
+        ":" => Token::Colon,
+        "," => Token::Comma,
+        "-" => Token::Dash,
+        "." => Token::Dot,
+        "=" => Token::Equal,
+        "(" => Token::LeftParen,
+        "+" => Token::Plus,
+        ")" => Token::RightParen,
+        "*" => Token::Star,
 
-        "else" => Tok::KwElse,
-        "extern" => Tok::KwExtern,
-        "fn" => Tok::KwFn,
-        "if" => Tok::KwIf,
-        "int" => Tok::KwInt,
-        "let" => Tok::KwLet,
-        "return" => Tok::KwReturn,
-        "string" => Tok::KwString,
-        "struct" => Tok::KwStruct,
-        "while" => Tok::KwWhile,
+        // keywords
+        "else" => Token::KeywordElse,
+        "extern" => Token::KeywordExtern,
+        "false" => Token::KeywordFalse,
+        "fn" => Token::KeywordFn,
+        "if" => Token::KeywordIf,
+        "let" => Token::KeywordLet,
+        "return" => Token::KeywordReturn,
+        "struct" => Token::KeywordStruct,
+        "true" => Token::KeywordTrue,
+        "while" => Token::KeywordWhile,
 
-        ":" => Tok::SymColon,
-        "," => Tok::SymComma,
-        "." => Tok::SymDot,
-        "=" => Tok::SymEqual,
-        "(" => Tok::SymLeftParen,
-        "-" => Tok::SymMinus,
-        "+" => Tok::SymPlus,
-        ")" => Tok::SymRightParen,
-        "*" => Tok::SymStar,
+        // type literals
+        "bool" => Token::TypeBool,
+        "char" => Token::TypeChar,
+        "int" => Token::TypeInt,
+        "string" => Token::TypeString,
 
-        "->" => Tok::SymArrow,
-        "==" => Tok::SymIsEquals,
-        "!=" => Tok::SymNotEquals,
+        "EOF" => Token::EOF,
+        "Newline" => Token::Newline,
+        "Indent" => Token::Indent,
+        "Dedent" => Token::Dedent,
+
+        "Integer" => Token::Integer(<u32>),
+        "String" => Token::String(<String>),
+        "Ident" => Token::Ident(<String>),
     }
 }
 
