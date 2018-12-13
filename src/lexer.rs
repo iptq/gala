@@ -89,14 +89,14 @@ impl Lexer {
         lexer
     }
     fn rest(&self) -> &str {
-        return &self.source[self.position..];
+        &self.source[self.position..]
     }
     fn peek(&self, offset: usize) -> Option<char> {
         let rest = self.rest();
-        if rest.len() == 0 {
+        if rest.is_empty() {
             return None;
         }
-        return rest.chars().nth(offset);
+        rest.chars().nth(offset)
     }
     fn peekwhile<F>(&self, f: F, offset: usize) -> &str
     where
@@ -109,7 +109,7 @@ impl Lexer {
             }
             length += 1;
         }
-        return &self.rest()[offset..length];
+        &self.rest()[offset..length]
     }
     fn whitecount(&self, line: &str) -> (usize, usize) {
         let mut count = 0usize;
@@ -125,7 +125,7 @@ impl Lexer {
                 _ => 0,
             };
         }
-        return (len, count);
+        (len, count)
     }
     fn indentcalc(&mut self, line: &str) -> usize {
         if self.nesting > 0 {
@@ -301,13 +301,10 @@ impl Lexer {
             None => panic!("what"),
         };
 
-        match value {
-            Some((v, len)) => {
-                self.queue
-                    .push_back(Ok((self.position, Token::Integer(v), self.position + len)));
-                self.position += len;
-            }
-            None => (),
+        if let Some((v, len)) = value {
+            self.queue
+                .push_back(Ok((self.position, Token::Integer(v), self.position + len)));
+            self.position += len;
         }
     }
     fn read_char(&mut self) {
@@ -393,7 +390,7 @@ impl Lexer {
                 _ => break,
             }
         }
-        return offset;
+        offset
     }
     fn precalc(&mut self) {
         while let Some(c) = self.peek(0) {
@@ -425,14 +422,12 @@ impl Lexer {
                     ('!', '=') => Some(Token::NotEqual),
                     (_, _) => None,
                 };
-                match opt {
-                    Some(token) => {
-                        self.queue
-                            .push_back(Ok((self.position, token, self.position + 2)));
-                        self.position += 2;
-                        continue;
-                    }
-                    None => (),
+
+                if let Some(token) = opt {
+                    self.queue
+                        .push_back(Ok((self.position, token, self.position + 2)));
+                    self.position += 2;
+                    continue;
                 }
             }
             match c {
@@ -451,9 +446,9 @@ impl Lexer {
                             ')' => Token::RightParen,
                             ';' => Token::Semicolon,
                             '*' => Token::Star,
-                            _ => Token::Symbol(
-                                self.source[self.position..self.position + 1].to_owned(),
-                            ),
+                            _ => {
+                                Token::Symbol(self.source[self.position..=self.position].to_owned())
+                            }
                         },
                         self.position + 1,
                     )));

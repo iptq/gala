@@ -101,10 +101,10 @@ impl IntoMir<mir::Expr> for Expr {
             }
             Expr::Literal(lit) => {
                 let ty = lit.get_type();
-                mir::Expr::Literal(lit.into(), ty)
+                mir::Expr::Literal(lit, ty)
             }
             Expr::Name(name) => mir::Expr::Name(name, ctx.next()),
-            Expr::Dot(left, right) => unimplemented!(),
+            Expr::Dot(_left, _right) => unimplemented!(),
             Expr::NotEquals(left, right) => {
                 let left = Box::new((*left).into_mir(ctx));
                 let right = Box::new((*right).into_mir(ctx));

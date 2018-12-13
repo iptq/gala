@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use ast;
 use common::{Field, Literal, Arg, Type};
 use lexer::Token;

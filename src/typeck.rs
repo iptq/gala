@@ -28,7 +28,7 @@ pub struct TypeContext {
 
 impl TypeLookup for TypeContext {
     fn lookup(&self, name: impl AsRef<str>) -> Option<Type> {
-        self.bindings.get(name.as_ref()).map(|ty| ty.clone())
+        self.bindings.get(name.as_ref()).cloned()
     }
     fn variable(&mut self, name: impl AsRef<str>, ty: &Type) {
         self.bindings.insert(name.as_ref().to_owned(), ty.clone());
@@ -54,7 +54,9 @@ impl TypeLookup for TypeStack {
         None
     }
     fn variable(&mut self, name: impl AsRef<str>, ty: &Type) {
-        self.0.last_mut().map(|scope| scope.variable(name, ty));
+        if let Some(scope) = self.0.last_mut() {
+            scope.variable(name, ty)
+        }
     }
 }
 
@@ -86,7 +88,7 @@ impl mir::TopDecl {
         use mir::TopDecl;
         match self {
             TopDecl::Extern(name, ty) => ctx.variable(name, ty),
-            TopDecl::Fn(name, args, ty, body) => ctx.variable(
+            TopDecl::Fn(name, args, ty, _body) => ctx.variable(
                 name,
                 &Type::Fn(
                     args.iter().map(|arg| arg.get_type()).collect::<Vec<_>>(),
@@ -99,7 +101,7 @@ impl mir::TopDecl {
     pub fn typeck(&mut self, ctx: &mut TypeStack) -> Result<(), Error> {
         use mir::TopDecl;
         match self {
-            TopDecl::Fn(name, args, ty, body) => {
+            TopDecl::Fn(_name, args, _ty, body) => {
                 ctx.scope();
                 for arg in args {
                     ctx.variable(&arg.0, &arg.get_type());
@@ -206,7 +208,7 @@ impl mir::Expr {
     pub fn apply_subst(&mut self, subst: &Substitution) {
         use mir::Expr;
         match self {
-            Expr::Literal(lit, ty) => ty.apply_subst(subst),
+            Expr::Literal(_lit, ty) => ty.apply_subst(subst),
             Expr::Name(_, ty) => ty.apply_subst(subst),
             Expr::Call(_, args, ty) => {
                 for arg in args {
@@ -269,10 +271,6 @@ impl mir::Expr {
                     Constraint::new(ty, &right),
                 ]
             }
-            _ => {
-                panic!("{:?}", self);
-                unimplemented!()
-            }
         }.into_iter()
         .collect::<HashSet<_>>()
     }
@@ -303,16 +301,13 @@ fn unify(constraints: HashSet<Constraint>) -> Result<Substitution, Error> {
         let mut flag = false;
         let mut inserts = Vec::new();
         for (n, t) in substitution.iter() {
-            match t {
-                Type::T(m) => {
-                    flag = true;
-                    let s = substitution.get(m).clone();
+            if let Type::T(m) = t {
+                flag = true;
+                let s = substitution.get(m);
 
-                    if let Some(t) = s {
-                        inserts.push((*n, t.clone()));
-                    }
+                if let Some(t) = s {
+                    inserts.push((*n, t.clone()));
                 }
-                _ => (),
             }
         }
         substitution.extend(inserts);

@@ -8,7 +8,7 @@ lazy_static! {
 pub fn next_int() -> u32 {
     let mut c = counter.lock().unwrap();
     *c += 1;
-    return *c;
+    *c
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq)]

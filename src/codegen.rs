@@ -3,12 +3,11 @@ use std::collections::BTreeMap;
 use common::{self, next_int, Typed};
 use mir;
 
-fn letter_of_number(n: u32) -> String {
+fn letter_of_number(mut n: u32) -> String {
     let mut result = String::new();
-    let mut n = n;
     while n > 0 {
         result.push(((n % 26) as u8 + 97) as char);
-        n = n / 26;
+        n /= 26;
     }
     result.chars().rev().collect::<String>()
 }
@@ -54,7 +53,7 @@ impl Scope {
         self.names.insert(name.as_ref().to_owned(), id);
     }
     pub fn lookup_name(&self, name: impl AsRef<str>) -> Option<u32> {
-        self.names.get(name.as_ref()).map(|v| v.clone())
+        self.names.get(name.as_ref()).cloned()
     }
     pub fn as_string(&self) -> String {
         self.items
@@ -81,18 +80,18 @@ impl Emitter {
     }
     pub fn pop(&mut self) {
         if let Some(scope) = self.scope_stack.pop() {
-            self.scope_stack
-                .last_mut()
-                .map(|scope2| scope2.push_subscope(scope));
+            if let Some(scope2) = self.scope_stack.last_mut() {
+                scope2.push_subscope(scope)
+            }
         }
     }
     pub fn next_int(&mut self) -> u32 {
         next_int()
     }
     pub fn new_variable(&mut self, name: impl AsRef<str>, id: u32) {
-        self.scope_stack
-            .last_mut()
-            .map(|scope| scope.new_variable(name, id));
+        if let Some(scope) = self.scope_stack.last_mut() {
+            scope.new_variable(name, id)
+        }
     }
     pub fn lookup_name(&self, name: impl AsRef<str>) -> Option<u32> {
         for v in self.scope_stack.iter().rev() {
@@ -103,14 +102,14 @@ impl Emitter {
         None
     }
     pub fn push_global_line(&mut self, line: impl AsRef<str>) {
-        self.scope_stack
-            .first_mut()
-            .map(|scope| scope.prepend_line(line));
+        if let Some(scope) = self.scope_stack.first_mut() {
+            scope.prepend_line(line)
+        }
     }
     pub fn push_line(&mut self, line: impl AsRef<str>) {
-        self.scope_stack
-            .last_mut()
-            .map(|scope| scope.push_line(line));
+        if let Some(scope) = self.scope_stack.last_mut() {
+            scope.push_line(line)
+        }
     }
     pub fn as_string(&self) -> String {
         self.scope_stack[0].as_string()
@@ -148,7 +147,7 @@ impl Codegen for mir::TopDecl {
                     args_a.push(format!("store i32 %i{}, i32* %i{}", argn, tmp));
                     emitter.new_variable(&arg.0, tmp);
                 }
-                for arg in args {}
+                for _arg in args {}
                 emitter.push_line(format!("define i32 @{} ({}) {{", name, args_s.join(", ")));
                 emitter.push_line("entry:");
                 emitter.scope();
@@ -165,7 +164,7 @@ impl Codegen for mir::TopDecl {
             TopDecl::Struct(name, fields) => {
                 let fields_s = fields
                     .iter()
-                    .map(|field| format!("{}", field.get_type().ir_repr().as_ref()))
+                    .map(|field| field.get_type().ir_repr().as_ref().to_owned())
                     .collect::<Vec<_>>()
                     .join(", ");
                 emitter.push_line(format!("%st.{} = type {{ {} }}", name, fields_s));
@@ -188,7 +187,7 @@ impl Codegen for mir::Stmt {
                 } else {
                     emitter
                         .lookup_name(name)
-                        .expect(&format!("Name '{}' not found.", name))
+                        .unwrap_or_else(|| panic!("Name '{}' not found.", name))
                 };
                 let tmp = emitter.next_int();
                 emitter.push_line(format!("%i{} = add i32 %i{}, 0", tmp, assigned));
@@ -263,7 +262,7 @@ impl Codegen for mir::Stmt {
                     emitter.push_line(format!("ret i32 %i{}", expr));
                 }
                 None => {
-                    emitter.push_line(format!("ret void"));
+                    emitter.push_line("ret void".to_owned());
                 }
             },
         }

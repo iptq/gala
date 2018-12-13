@@ -14,6 +14,8 @@ mod lexer;
 mod mir;
 mod typeck;
 
+lalrpop_mod!(pub parser);
+
 use std::fs::File;
 use std::io::{stdin, Read, Stdin};
 use std::path::PathBuf;
@@ -45,7 +47,7 @@ struct Opt {
     file: Option<PathBuf>,
 }
 
-lalrpop_mod!(pub parser);
+// lalrpop_mod!(pub parser);
 
 fn main() -> Result<(), Error> {
     let opt = Opt::from_args();
@@ -72,7 +74,7 @@ fn main() -> Result<(), Error> {
     let mut mir = ast.into_mir(&mut context);
 
     let mut stack = TypeStack::default();
-    mir.typeck(&mut stack);
+    mir.typeck(&mut stack)?;
     eprintln!("{:?}", mir);
 
     let mut emitter = Emitter::new();
